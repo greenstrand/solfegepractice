@@ -11,8 +11,11 @@ export const POSITION_STEP = STAFF_SPACING / 2;
 /** Horizontal pitch of one note slot. */
 export const NOTE_SLOT_WIDTH = 22;
 
-/** Left inset before the first note (clef room). */
-export const CLEF_INSET = 36;
+/** Left inset before the first note (Bravura clef advance ~2.7 staff spaces). */
+export const CLEF_INSET = 44;
+
+/** Extra horizontal gap before a mid-row clef change so the glyph clears the notehead. */
+export const MID_CLEF_EXTRA = Math.round(CLEF_INSET * 0.85);
 
 /** Vertical padding above position MAX and below MIN for labels/ledgers. */
 export const STAFF_PAD_TOP = 8;
@@ -46,11 +49,48 @@ export function staffRowHeight(
 }
 
 /** X center of note at local slot index (0-based within the row). */
-export function noteCenterX(slotIndex: number, clefInset: number = CLEF_INSET): number {
-  return clefInset + slotIndex * NOTE_SLOT_WIDTH + NOTE_SLOT_WIDTH / 2;
+export function noteCenterX(
+  slotIndex: number,
+  clefInset: number = CLEF_INSET,
+  midClefExtraBefore = 0,
+): number {
+  return clefInset + slotIndex * NOTE_SLOT_WIDTH + NOTE_SLOT_WIDTH / 2 + midClefExtraBefore;
 }
 
-/** Total SVG width for a row of `noteCount` slots. */
-export function staffRowWidth(noteCount: number, clefInset: number = CLEF_INSET): number {
-  return clefInset + noteCount * NOTE_SLOT_WIDTH + 8;
+/**
+ * Cumulative MID_CLEF_EXTRA for clef changes at local indices 1..slotIndex (inclusive).
+ * Slot 0 uses CLEF_INSET only (row-start clef).
+ */
+export function midClefExtraBeforeSlot(
+  notes: readonly { clef: string }[],
+  slotIndex: number,
+): number {
+  let extra = 0;
+  const last = Math.min(slotIndex, notes.length - 1);
+  for (let i = 1; i <= last; i++) {
+    if (notes[i].clef !== notes[i - 1].clef) {
+      extra += MID_CLEF_EXTRA;
+    }
+  }
+  return extra;
+}
+
+/** Count of mid-row clef changes in a row (local index > 0). */
+export function midClefChangeCount(notes: readonly { clef: string }[]): number {
+  let count = 0;
+  for (let i = 1; i < notes.length; i++) {
+    if (notes[i].clef !== notes[i - 1].clef) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+/** Total SVG width for a row of slots, including mid-clef gaps. */
+export function staffRowWidth(
+  noteCount: number,
+  clefInset: number = CLEF_INSET,
+  midClefCount = 0,
+): number {
+  return clefInset + noteCount * NOTE_SLOT_WIDTH + midClefCount * MID_CLEF_EXTRA + 8;
 }

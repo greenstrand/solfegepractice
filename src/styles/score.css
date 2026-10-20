@@ -1,5 +1,11 @@
 /* Score / staff ink on slate paper. */
 
+@font-face {
+  font-family: "Bravura";
+  src: url("/fonts/Bravura.otf") format("opentype");
+  font-display: block;
+}
+
 .score-view {
   display: flex;
   flex-direction: column;
@@ -35,7 +41,10 @@
 }
 
 .staff-view .clef-glyph {
-  color: #1c2430;
+  font-family: "Bravura", serif;
+  fill: #1c2430;
+  pointer-events: none;
+  user-select: none;
 }
 
 .staff-view .playhead {

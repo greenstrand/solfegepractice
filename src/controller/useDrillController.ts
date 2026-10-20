@@ -1,6 +1,6 @@
 /** Draft settings + session transport; owns rAF tick loop. */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Clef } from "../model/clefSolfegeMap";
 import { CLEFS } from "../model/clefSolfegeMap";
 import type { Rng } from "../model/generate";
@@ -9,11 +9,16 @@ import {
   DEFAULT_SETTINGS,
   type DrillSettings,
   type Session,
+  setBpm as applyBpm,
+  setRevealEnabled as applyRevealEnabled,
+  setRevealN as applyRevealN,
   setShowAnswers as applyShowAnswers,
   createSession,
   generate,
+  isGenerateDirty,
   pause,
   play,
+  remapNotesToClef,
   stop,
   tick,
   visibilityFor,
@@ -25,11 +30,14 @@ export type DrillController = {
   /** Hold-F focus peek: show only the playhead note's solfege. */
   focusPeek: boolean;
   setFocusPeek: (on: boolean) => void;
+  /** True when draft gen settings differ from applied session (needs Generate). */
+  generateDirty: boolean;
   setBpm: (bpm: number) => void;
   setDifficulty: (difficulty: number) => void;
   setRevealEnabled: (enabled: boolean) => void;
   setRevealN: (n: number) => void;
   setShowAnswers: (show: boolean) => void;
+  setMixClefs: (mix: boolean) => void;
   toggleClef: (clef: Clef) => void;
   onGenerate: (seed?: number) => void;
   onPlay: () => void;
@@ -130,14 +138,12 @@ export function useDrillController(): DrillController {
         prev,
         {
           bpm: draft.bpm,
-          revealN: draft.revealN,
-          revealEnabled: draft.revealEnabled,
           showAnswers: draft.showAnswers,
         },
         nowMs,
       ),
     );
-  }, [draft.bpm, draft.revealEnabled, draft.revealN, draft.showAnswers]);
+  }, [draft.bpm, draft.showAnswers]);
 
   const onPause = useCallback(() => {
     const nowMs = performance.now();
@@ -149,7 +155,9 @@ export function useDrillController(): DrillController {
   }, []);
 
   const setBpm = useCallback((bpm: number) => {
-    setDraft((d) => ({ ...d, bpm: clampBpm(bpm) }));
+    const next = clampBpm(bpm);
+    setDraft((d) => ({ ...d, bpm: next }));
+    setSession((prev) => applyBpm(prev, next));
   }, []);
 
   const setDifficulty = useCallback((difficulty: number) => {
@@ -158,10 +166,13 @@ export function useDrillController(): DrillController {
 
   const setRevealEnabled = useCallback((enabled: boolean) => {
     setDraft((d) => ({ ...d, revealEnabled: enabled }));
+    setSession((prev) => applyRevealEnabled(prev, enabled));
   }, []);
 
   const setRevealN = useCallback((n: number) => {
-    setDraft((d) => ({ ...d, revealN: clampRevealN(n) }));
+    const next = clampRevealN(n);
+    setDraft((d) => ({ ...d, revealN: next }));
+    setSession((prev) => applyRevealN(prev, next));
   }, []);
 
   const setShowAnswers = useCallback((show: boolean) => {
@@ -169,19 +180,42 @@ export function useDrillController(): DrillController {
     setSession((prev) => applyShowAnswers(prev, show));
   }, []);
 
-  const toggleClef = useCallback((clef: Clef) => {
-    setDraft((d) => {
-      const has = d.clefs.includes(clef);
-      if (has) {
-        if (d.clefs.length <= 1) {
-          return d;
-        }
-        return { ...d, clefs: d.clefs.filter((c) => c !== clef) };
+  const setMixClefs = useCallback(
+    (mix: boolean) => {
+      if (mix) {
+        setDraft((d) => (d.mixClefs ? d : { ...d, mixClefs: true }));
+        return;
       }
-      const next = CLEFS.filter((c) => d.clefs.includes(c) || c === clef);
-      return { ...d, clefs: next };
-    });
-  }, []);
+      const sole = draft.clefs[0] ?? "treble";
+      setDraft((d) => ({ ...d, mixClefs: false, clefs: [sole] }));
+      setSession((prev) => remapNotesToClef(prev, sole));
+    },
+    [draft.clefs],
+  );
+
+  const toggleClef = useCallback(
+    (clef: Clef) => {
+      if (!draft.mixClefs) {
+        setDraft((d) => ({ ...d, clefs: [clef], mixClefs: false }));
+        setSession((prev) => remapNotesToClef(prev, clef));
+        return;
+      }
+      setDraft((d) => {
+        const has = d.clefs.includes(clef);
+        if (has) {
+          if (d.clefs.length <= 1) {
+            return d;
+          }
+          return { ...d, clefs: d.clefs.filter((c) => c !== clef) };
+        }
+        const next = CLEFS.filter((c) => d.clefs.includes(c) || c === clef);
+        return { ...d, clefs: next };
+      });
+    },
+    [draft.mixClefs],
+  );
+
+  const generateDirty = useMemo(() => isGenerateDirty(session, draft), [session, draft]);
 
   const visibilityForIndex = useCallback(
     (index: number) => visibilityFor(session, index, { focusPeek }),
@@ -196,11 +230,13 @@ export function useDrillController(): DrillController {
     session,
     focusPeek,
     setFocusPeek,
+    generateDirty,
     setBpm,
     setDifficulty,
     setRevealEnabled,
     setRevealN,
     setShowAnswers,
+    setMixClefs,
     toggleClef,
     onGenerate,
     onPlay,

@@ -76,6 +76,7 @@ export function AppShell({ drill }: AppShellProps) {
       <ControlsView
         draft={draft}
         playing={session.playing}
+        generateDirty={drill.generateDirty}
         progressLabel={drill.progressLabel}
         onGenerate={() => drill.onGenerate()}
         onPlay={drill.onPlay}
@@ -86,6 +87,7 @@ export function AppShell({ drill }: AppShellProps) {
         setRevealEnabled={drill.setRevealEnabled}
         setRevealN={drill.setRevealN}
         setShowAnswers={drill.setShowAnswers}
+        setMixClefs={drill.setMixClefs}
         toggleClef={drill.toggleClef}
       />
 

@@ -6,12 +6,14 @@ import type { NoteVisibility } from "../model/session";
 import { STAFF_LINES, ledgerLinesFor } from "../model/staffWindow";
 import { CLEF_REF_POSITION, ClefGlyph } from "./clefGlyphs";
 import {
-  CLEF_INSET,
   LEDGER_HALF_WIDTH,
+  MID_CLEF_EXTRA,
   NOTEHEAD_RADIUS,
   NOTE_SLOT_WIDTH,
   STAFF_PAD_BOTTOM,
   STAFF_PAD_TOP,
+  midClefChangeCount,
+  midClefExtraBeforeSlot,
   middleLineYFromTop,
   noteCenterX,
   positionToY,
@@ -48,7 +50,8 @@ export function StaffView({
   showCursor = true,
   className = "staff-view",
 }: StaffViewProps) {
-  const width = staffRowWidth(notes.length);
+  const midClefs = midClefChangeCount(notes);
+  const width = staffRowWidth(notes.length, undefined, midClefs);
   const height = staffRowHeight();
   const midY = middleLineYFromTop();
   const labelY = height - STAFF_PAD_BOTTOM / 2;
@@ -58,6 +61,10 @@ export function StaffView({
     playhead !== undefined && playhead >= startIndex && playhead < startIndex + notes.length
       ? playhead - startIndex
       : -1;
+  const playheadCx =
+    playheadLocal >= 0
+      ? noteCenterX(playheadLocal, undefined, midClefExtraBeforeSlot(notes, playheadLocal))
+      : 0;
 
   return (
     <svg
@@ -78,7 +85,7 @@ export function StaffView({
       {showCursor && playheadLocal >= 0 ? (
         <rect
           className="playhead"
-          x={noteCenterX(playheadLocal) - slotHalf - 2}
+          x={playheadCx - slotHalf - 2}
           y={STAFF_PAD_TOP - 4}
           width={NOTE_SLOT_WIDTH + 4}
           height={height - STAFF_PAD_TOP - STAFF_PAD_BOTTOM + 8}
@@ -89,17 +96,20 @@ export function StaffView({
       {notes.map((note, localIndex) => {
         const absoluteIndex = startIndex + localIndex;
         const vis = visibilityFor(absoluteIndex);
-        const cx = noteCenterX(localIndex);
+        const midExtra = midClefExtraBeforeSlot(notes, localIndex);
+        const cx = noteCenterX(localIndex, undefined, midExtra);
         const cy = positionToY(note.position, midY);
         const showClef =
           vis.noteVisible && (vis.clefVisible || (localIndex === 0 && showRowStartClef));
+        // Row-start uses left inset; mid-row clef sits at the start of the reserved gap.
+        const clefX = localIndex === 0 ? 6 : cx - slotHalf - MID_CLEF_EXTRA + 4;
 
         return (
           <g key={absoluteIndex} className="staff-note" data-index={absoluteIndex}>
             {showClef ? (
               <ClefGlyph
                 clef={note.clef}
-                x={localIndex === 0 ? 6 : cx - CLEF_INSET * 0.85}
+                x={clefX}
                 refY={positionToY(CLEF_REF_POSITION[note.clef], midY)}
               />
             ) : null}

@@ -90,6 +90,12 @@ body {
   font-weight: 600;
 }
 
+.controls-generate-hint {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
 .btn {
   appearance: none;
   border: 1px solid var(--line);

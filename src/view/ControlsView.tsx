@@ -7,6 +7,7 @@ import type { DrillSettings } from "../model/session";
 export type ControlsViewProps = {
   draft: DrillSettings;
   playing: boolean;
+  generateDirty: boolean;
   progressLabel: string;
   onGenerate: () => void;
   onPlay: () => void;
@@ -17,6 +18,7 @@ export type ControlsViewProps = {
   setRevealEnabled: (enabled: boolean) => void;
   setRevealN: (n: number) => void;
   setShowAnswers: (show: boolean) => void;
+  setMixClefs: (mix: boolean) => void;
   toggleClef: (clef: Clef) => void;
   className?: string;
 };
@@ -31,6 +33,7 @@ const CLEF_LABELS: Record<Clef, string> = {
 export function ControlsView({
   draft,
   playing,
+  generateDirty,
   progressLabel,
   onGenerate,
   onPlay,
@@ -41,15 +44,27 @@ export function ControlsView({
   setRevealEnabled,
   setRevealN,
   setShowAnswers,
+  setMixClefs,
   toggleClef,
   className = "controls-view",
 }: ControlsViewProps) {
+  /** Difficulty / Mix / mix-clef set need Generate; locked while playing. */
+  const genLocked = playing;
+  /** Single-clef (Mix off) remaps live — stay enabled mid-run. */
+  const clefPickLocked = playing && draft.mixClefs;
+  const clefInputType = draft.mixClefs ? "checkbox" : "radio";
+
   return (
     <section className={className} aria-label="Drill controls">
       <div className="controls-transport">
         <button type="button" className="btn btn-primary" onClick={onGenerate}>
           Generate
         </button>
+        {generateDirty && !playing ? (
+          <span className="controls-generate-hint" aria-live="polite">
+            Generate to apply
+          </span>
+        ) : null}
         <button type="button" className="btn" onClick={onPlay} disabled={playing}>
           Play
         </button>
@@ -97,6 +112,7 @@ export function ControlsView({
               max={10}
               step={1}
               value={draft.difficulty}
+              disabled={genLocked}
               onChange={(e) => setDifficulty(Number(e.target.value))}
               aria-label="Difficulty slider"
             />
@@ -105,6 +121,7 @@ export function ControlsView({
               min={1}
               max={10}
               value={draft.difficulty}
+              disabled={genLocked}
               onChange={(e) => setDifficulty(Number(e.target.value))}
               aria-label="Difficulty"
             />
@@ -113,12 +130,23 @@ export function ControlsView({
 
         <fieldset className="control-field control-clefs">
           <legend className="control-label">Clefs</legend>
-          <div className="clef-checks">
+          <label className="check-label">
+            <input
+              type="checkbox"
+              checked={draft.mixClefs}
+              disabled={genLocked}
+              onChange={(e) => setMixClefs(e.target.checked)}
+            />
+            Mix clefs
+          </label>
+          <div className="clef-checks" role={draft.mixClefs ? undefined : "radiogroup"}>
             {CLEFS.map((clef) => (
               <label key={clef} className="check-label">
                 <input
-                  type="checkbox"
+                  type={clefInputType}
+                  name={draft.mixClefs ? undefined : "clef-pick"}
                   checked={draft.clefs.includes(clef)}
+                  disabled={clefPickLocked}
                   onChange={() => toggleClef(clef)}
                 />
                 {CLEF_LABELS[clef]}

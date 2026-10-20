@@ -1,6 +1,7 @@
 # Fixed Dojo
 
 Fixed-do clef solfege drill: paced staff practice with React and SVG notation.
+Clefs use the [Bravura](https://github.com/steinbergmedia/bravura) SMuFL font (SIL OFL; see `public/fonts/OFL.txt`).
 
 ## Usage
 
