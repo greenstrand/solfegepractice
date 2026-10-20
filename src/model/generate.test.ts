@@ -132,4 +132,30 @@ describe("generateDrill", () => {
       expect(note.position).toBeLessThanOrEqual(hi);
     }
   });
+
+  it("positions stay continuous across clef boundaries at low difficulty", () => {
+    // Diff 1-2: maxLeap is 1 near d=1 and small near d=2; steps dominate everywhere,
+    // including indices where the clef changes (no melodic reset at boundaries).
+    const notes = generateDrill(
+      { clefs: ["treble", "bass", "alto", "tenor"], difficulty: 2 },
+      seededRng(77),
+    );
+    expect(notes).toHaveLength(SEQUENCE_LENGTH);
+    expect(stepRate(notes)).toBeGreaterThan(0.7);
+    expect(meanAbsDelta(notes)).toBeLessThan(2);
+
+    const boundaryDeltas: number[] = [];
+    for (let i = 1; i < notes.length; i++) {
+      const delta = Math.abs(notes[i].position - notes[i - 1].position);
+      expect(delta).toBeGreaterThan(0);
+      expect(delta).toBeLessThanOrEqual(4);
+      if (notes[i].clef !== notes[i - 1].clef) {
+        boundaryDeltas.push(delta);
+      }
+    }
+    expect(boundaryDeltas.length).toBeGreaterThan(0);
+    const boundarySteps = boundaryDeltas.filter((d) => d <= 2).length;
+    expect(boundarySteps / boundaryDeltas.length).toBeGreaterThan(0.7);
+    expect(Math.max(...boundaryDeltas)).toBeLessThanOrEqual(4);
+  });
 });

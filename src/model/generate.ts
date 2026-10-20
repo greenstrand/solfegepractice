@@ -1,4 +1,4 @@
-/** Clef-run schedule then positions; difficulty lerp; no unisons; bounds; remainder rule. Pure given rng. */
+/** Positions-first drill generation; clef schedule overlay; difficulty lerp; no unisons. Pure given rng. */
 
 import { type Clef, isDo } from "./clefSolfegeMap";
 import {
@@ -230,15 +230,29 @@ function sampleClefRunLength(rng: Rng): number {
   return CLEF_RUN_LENGTHS[idx < 0 ? 0 : idx];
 }
 
-type ClefRun = { clef: Clef; length: number };
+export type ClefRun = { clef: Clef; length: number };
 
-function buildClefSchedule(clefs: readonly Clef[], rng: Rng): ClefRun[] {
+/**
+ * Sample clef-run lengths covering `length` notes (default SEQUENCE_LENGTH).
+ * Remainder=1 extends the previous run; adjacent runs prefer different clefs.
+ */
+export function buildClefSchedule(
+  clefs: readonly Clef[],
+  rng: Rng,
+  length: number = SEQUENCE_LENGTH,
+): ClefRun[] {
+  if (clefs.length < 1) {
+    throw new Error("buildClefSchedule requires at least one clef");
+  }
+  if (length < 1) {
+    return [];
+  }
   if (clefs.length === 1) {
-    return [{ clef: clefs[0], length: SEQUENCE_LENGTH }];
+    return [{ clef: clefs[0], length }];
   }
 
   const lengths: number[] = [];
-  let remaining = SEQUENCE_LENGTH;
+  let remaining = length;
   while (remaining > 0) {
     if (remaining === 1) {
       if (lengths.length === 0) {
@@ -259,9 +273,9 @@ function buildClefSchedule(clefs: readonly Clef[], rng: Rng): ClefRun[] {
 
   const runs: ClefRun[] = [];
   let prevClef: Clef | null = null;
-  for (const length of lengths) {
+  for (const runLength of lengths) {
     const clef = pickClef(clefs, prevClef, rng);
-    runs.push({ clef, length });
+    runs.push({ clef, length: runLength });
     prevClef = clef;
   }
   return runs;
@@ -304,7 +318,7 @@ function doPositions(clef: Clef, lo: number, hi: number): number[] {
 }
 
 function sampleStartPosition(
-  clef: Clef,
+  clef: Clef | null,
   params: DifficultyParams,
   phraseCenter: number,
   forbid: number | null,
@@ -312,8 +326,8 @@ function sampleStartPosition(
   lo: number,
   hi: number,
 ): number {
-  const wantDo = rng.next() < params.pStartDo;
-  let candidates = wantDo ? doPositions(clef, lo, hi) : null;
+  const wantDo = clef !== null && rng.next() < params.pStartDo;
+  let candidates = wantDo && clef !== null ? doPositions(clef, lo, hi) : null;
   if (candidates === null || candidates.length === 0) {
     candidates = [];
     for (let p = lo; p <= hi; p++) {
@@ -417,19 +431,35 @@ function sampleNextPitch(
   return { pitch, delta };
 }
 
-function generateRun(
-  clef: Clef,
+/**
+ * Sample one continuous staff-position stream. Clefs never influence intervals.
+ * `startClefForDo` only biases the first note toward Do for that clef (whole-sequence start).
+ */
+export function samplePositions(
   length: number,
-  params: DifficultyParams,
   difficulty: number,
-  prevPosition: number | null,
+  ledgerLines: number,
   rng: Rng,
-  lo: number,
-  hi: number,
+  startClefForDo?: Clef,
 ): number[] {
+  if (length < 1) {
+    return [];
+  }
+  const n = clampLedgerLines(ledgerLines);
+  const lo = minPosition(n);
+  const hi = maxPosition(n);
+  const params = lerpDifficulty(difficulty);
   const phraseCenter = phraseCenterFor(difficulty, rng, lo, hi);
   const positions: number[] = [];
-  const pitch = sampleStartPosition(clef, params, phraseCenter, prevPosition, rng, lo, hi);
+  const pitch = sampleStartPosition(
+    startClefForDo ?? null,
+    params,
+    phraseCenter,
+    null,
+    rng,
+    lo,
+    hi,
+  );
   positions.push(pitch);
 
   let state: MelodicState = {
@@ -453,8 +483,43 @@ function generateRun(
   return positions;
 }
 
+/** Zip position stream with a clef-run schedule into DrillNotes. */
+export function zipDrill(positions: readonly number[], schedule: readonly ClefRun[]): DrillNote[] {
+  const clefs: Clef[] = [];
+  for (const run of schedule) {
+    for (let i = 0; i < run.length; i++) {
+      clefs.push(run.clef);
+    }
+  }
+  if (clefs.length !== positions.length) {
+    throw new Error(
+      `zipDrill length mismatch: ${positions.length} positions vs ${clefs.length} scheduled clefs`,
+    );
+  }
+  return positions.map((position, i) => ({ position, clef: clefs[i] }));
+}
+
 /**
- * Build a 256-note drill: clef-run schedule first, then positions per run.
+ * Overlay a fresh clef schedule on existing positions (same length).
+ * Throws if `clefs` is empty or positions is empty.
+ */
+export function applyClefSchedule(
+  positions: readonly number[],
+  clefs: readonly Clef[],
+  rng: Rng,
+): DrillNote[] {
+  if (clefs.length < 1) {
+    throw new Error("applyClefSchedule requires at least one clef");
+  }
+  if (positions.length < 1) {
+    throw new Error("applyClefSchedule requires at least one position");
+  }
+  const schedule = buildClefSchedule(clefs, rng, positions.length);
+  return zipDrill(positions, schedule);
+}
+
+/**
+ * Build a 256-note drill: one continuous position stream, then clef schedule overlay.
  * Throws if `settings.clefs` is empty.
  */
 export function generateDrill(
@@ -469,30 +534,15 @@ export function generateDrill(
     throw new Error("generateDrill requires at least one clef");
   }
 
-  const n = clampLedgerLines(settings.ledgerLines ?? DEFAULT_LEDGER_LINES);
-  const lo = minPosition(n);
-  const hi = maxPosition(n);
-  const params = lerpDifficulty(settings.difficulty);
-  const schedule = buildClefSchedule(settings.clefs, rng);
-  const notes: DrillNote[] = [];
-  let prevPosition: number | null = null;
-
-  for (const run of schedule) {
-    const positions = generateRun(
-      run.clef,
-      run.length,
-      params,
-      settings.difficulty,
-      prevPosition,
-      rng,
-      lo,
-      hi,
-    );
-    for (const position of positions) {
-      notes.push({ position, clef: run.clef });
-    }
-    prevPosition = positions[positions.length - 1] ?? prevPosition;
-  }
-
-  return notes;
+  const ledgerLines = clampLedgerLines(settings.ledgerLines ?? DEFAULT_LEDGER_LINES);
+  const schedule = buildClefSchedule(settings.clefs, rng, SEQUENCE_LENGTH);
+  const startClefForDo = schedule[0]?.clef;
+  const positions = samplePositions(
+    SEQUENCE_LENGTH,
+    settings.difficulty,
+    ledgerLines,
+    rng,
+    startClefForDo,
+  );
+  return zipDrill(positions, schedule);
 }
