@@ -5,7 +5,7 @@ import type { DrillNote } from "../model/generate";
 import type { NoteVisibility } from "../model/session";
 import { DEFAULT_LEDGER_LINES } from "../model/staffWindow";
 import { StaffView } from "./StaffView";
-import { maxStaffRowWidth, notesPerRowForWidth } from "./staffLayout";
+import { maxStaffRowWidth, notesPerRowFittingContent, notesPerRowForWidth } from "./staffLayout";
 import "../styles/score.css";
 
 export type ScoreViewProps = {
@@ -38,7 +38,7 @@ export function ScoreView({
   className = "score-view",
 }: ScoreViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [measuredPerRow, setMeasuredPerRow] = useState(MAX_NOTES_PER_ROW);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   useEffect(() => {
     if (notesPerRowProp !== undefined) {
@@ -49,7 +49,7 @@ export function ScoreView({
       return;
     }
     const apply = (width: number) => {
-      setMeasuredPerRow(notesPerRowFromWidth(width));
+      setContainerWidth(width);
     };
     apply(el.clientWidth);
     const observer = new ResizeObserver((entries) => {
@@ -62,6 +62,10 @@ export function ScoreView({
     return () => observer.disconnect();
   }, [notesPerRowProp]);
 
+  const measuredPerRow =
+    containerWidth > 0
+      ? notesPerRowFittingContent(notes, containerWidth, MIN_NOTES_PER_ROW, MAX_NOTES_PER_ROW)
+      : MAX_NOTES_PER_ROW;
   const perRow = Math.max(1, notesPerRowProp ?? measuredPerRow);
   const rows: { notes: DrillNote[]; startIndex: number }[] = [];
 
@@ -72,7 +76,11 @@ export function ScoreView({
     });
   }
 
-  const targetWidth = maxStaffRowWidth(rows, perRow);
+  const equalized = maxStaffRowWidth(rows, perRow);
+  const targetWidth =
+    containerWidth > 0 && notesPerRowProp === undefined
+      ? Math.min(equalized, containerWidth)
+      : equalized;
 
   return (
     <div ref={containerRef} className={className} aria-label="Score">

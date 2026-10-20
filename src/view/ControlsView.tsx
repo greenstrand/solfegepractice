@@ -157,7 +157,7 @@ export function ControlsView({
         </fieldset>
 
         <div className="control-field control-toggles">
-          <div className="control-reveal-row">
+          <div className="control-reveal-stack">
             <label className="check-label">
               <input
                 type="checkbox"
@@ -166,7 +166,7 @@ export function ControlsView({
               />
               Progressive reveal
             </label>
-            <label className="control-inline">
+            <label className="control-inline control-notes-ahead">
               <span className="control-label">Notes ahead</span>
               <input
                 type="number"

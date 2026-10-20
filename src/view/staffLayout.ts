@@ -178,3 +178,31 @@ export function notesPerRowForWidth(
   const count = Math.floor(usable / NOTE_SLOT_WIDTH);
   return Math.min(maxNotes, Math.max(minNotes, count));
 }
+
+/**
+ * Notes-per-row that keeps equalized staff SVGs within `widthPx` for the given
+ * note sequence. Starts from {@link notesPerRowForWidth}, then reduces until
+ * {@link maxStaffRowWidth} fits (down to 1 when needed).
+ */
+export function notesPerRowFittingContent(
+  notes: readonly { clef: string }[],
+  widthPx: number,
+  minNotes: number,
+  maxNotes: number,
+): number {
+  if (!(widthPx > 0)) {
+    return maxNotes;
+  }
+  let perRow = notesPerRowForWidth(widthPx, minNotes, maxNotes);
+  while (perRow > 1) {
+    const rows: { notes: readonly { clef: string }[] }[] = [];
+    for (let start = 0; start < notes.length; start += perRow) {
+      rows.push({ notes: notes.slice(start, start + perRow) });
+    }
+    if (rows.length === 0 || maxStaffRowWidth(rows, perRow) <= widthPx) {
+      return perRow;
+    }
+    perRow -= 1;
+  }
+  return 1;
+}
