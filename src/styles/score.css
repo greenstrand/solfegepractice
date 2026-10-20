@@ -59,15 +59,10 @@
 }
 
 .staff-view .solfege-label {
-  fill: #c4781a;
-  font-size: 9px;
+  fill: #0f7a7a;
+  font-size: 10px;
   font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: lowercase;
-}
-
-.staff-view .solfege-label-peek {
-  fill: #0f7a7a;
-  font-size: 11px;
 }
