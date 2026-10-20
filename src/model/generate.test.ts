@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CLEFS, type Clef } from "./clefSolfegeMap";
 import { type DrillNote, type Rng, SEQUENCE_LENGTH, generateDrill } from "./generate";
-import { MAX_POSITION, MIN_POSITION } from "./staffWindow";
+import { MAX_POSITION, MIN_POSITION, maxPosition, minPosition } from "./staffWindow";
 
 /** Deterministic mulberry32 in [0, 1). */
 function seededRng(seed: number): Rng {
@@ -101,5 +101,35 @@ describe("generateDrill", () => {
     expect(() => generateDrill({ clefs: [], difficulty: 3 }, seededRng(1))).toThrow(
       /at least one clef/i,
     );
+  });
+
+  it("clamps positions to N=0 window [6,14]", () => {
+    const lo = minPosition(0);
+    const hi = maxPosition(0);
+    expect(lo).toBe(6);
+    expect(hi).toBe(14);
+    const notes = generateDrill(
+      { clefs: ["treble"], difficulty: 10, ledgerLines: 0 },
+      seededRng(42),
+    );
+    for (const note of notes) {
+      expect(note.position).toBeGreaterThanOrEqual(lo);
+      expect(note.position).toBeLessThanOrEqual(hi);
+    }
+  });
+
+  it("clamps positions to N=4 window [-2,22]", () => {
+    const lo = minPosition(4);
+    const hi = maxPosition(4);
+    expect(lo).toBe(-2);
+    expect(hi).toBe(22);
+    const notes = generateDrill(
+      { clefs: ["treble"], difficulty: 10, ledgerLines: 4 },
+      seededRng(42),
+    );
+    for (const note of notes) {
+      expect(note.position).toBeGreaterThanOrEqual(lo);
+      expect(note.position).toBeLessThanOrEqual(hi);
+    }
   });
 });

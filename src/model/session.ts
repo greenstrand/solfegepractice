@@ -2,12 +2,15 @@
 
 import type { Clef } from "./clefSolfegeMap";
 import { type DrillNote, type Rng, SEQUENCE_LENGTH, generateDrill } from "./generate";
+import { DEFAULT_LEDGER_LINES, clampLedgerLines } from "./staffWindow";
 
 export type DrillSettings = {
   clefs: Clef[];
   /** When false, clef UI is single-select and remaps the current sequence. */
   mixClefs: boolean;
   difficulty: number;
+  /** Max ledger lines above and below the staff (same count each side). */
+  ledgerLines: number;
   bpm: number;
   revealN: number;
   showAnswers: boolean;
@@ -49,6 +52,7 @@ export const DEFAULT_SETTINGS: DrillSettings = {
   clefs: ["treble"],
   mixClefs: false,
   difficulty: 3,
+  ledgerLines: DEFAULT_LEDGER_LINES,
   bpm: 80,
   revealN: 1,
   showAnswers: false,
@@ -91,12 +95,18 @@ export function createSession(overrides?: Partial<DrillSettings>): Session {
 
 /** Replace notes via generateDrill; reset playhead and transport phase. */
 export function generate(session: Session, rng: Rng): Session {
+  const ledgerLines = clampLedgerLines(session.settings.ledgerLines);
   const notes = generateDrill(
-    { clefs: session.settings.clefs, difficulty: session.settings.difficulty },
+    {
+      clefs: session.settings.clefs,
+      difficulty: session.settings.difficulty,
+      ledgerLines,
+    },
     rng,
   );
   return {
     ...session,
+    settings: { ...session.settings, ledgerLines },
     notes,
     playhead: 0,
     playing: false,
@@ -189,11 +199,14 @@ export function remapNotesToClef(session: Session, clef: Clef): Session {
 
 /**
  * True when draft generation settings differ from the applied session sequence settings
- * (difficulty, mix clef set). BPM, showAnswers, and reveal are live and ignored.
+ * (difficulty, ledger lines, mix clef set). BPM, showAnswers, and reveal are live and ignored.
  */
 export function isGenerateDirty(session: Session, draft: DrillSettings): boolean {
   const s = session.settings;
   if (draft.difficulty !== s.difficulty) {
+    return true;
+  }
+  if (clampLedgerLines(draft.ledgerLines) !== clampLedgerLines(s.ledgerLines)) {
     return true;
   }
   if (draft.mixClefs !== s.mixClefs) {

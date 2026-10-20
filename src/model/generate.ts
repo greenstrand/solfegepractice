@@ -1,7 +1,13 @@
 /** Clef-run schedule then positions; difficulty lerp; no unisons; bounds; remainder rule. Pure given rng. */
 
 import { type Clef, isDo } from "./clefSolfegeMap";
-import { MAX_POSITION, MIDDLE_LINE, MIN_POSITION } from "./staffWindow";
+import {
+  DEFAULT_LEDGER_LINES,
+  MIDDLE_LINE,
+  clampLedgerLines,
+  maxPosition,
+  minPosition,
+} from "./staffWindow";
 
 export const SEQUENCE_LENGTH = 256;
 
@@ -271,11 +277,11 @@ function pickClef(clefs: readonly Clef[], prev: Clef | null, rng: Rng): Clef {
   return pool[clamp(idx, 0, pool.length - 1)];
 }
 
-function phraseCenterFor(difficulty: number, rng: Rng): number {
+function phraseCenterFor(difficulty: number, rng: Rng, lo: number, hi: number): number {
   const d = clamp(difficulty, 1, 10);
   const jitterMax = Math.round(lerp(2, 4, (d - 1) / 9));
   const offset = Math.round((rng.next() * 2 - 1) * jitterMax);
-  return clamp(MIDDLE_LINE + offset, MIN_POSITION, MAX_POSITION);
+  return clamp(MIDDLE_LINE + offset, lo, hi);
 }
 
 function rangeFalloff(position: number, center: number, rangeHalf: number): number {
@@ -287,9 +293,9 @@ function rangeFalloff(position: number, center: number, rangeHalf: number): numb
   return Math.exp(-excess);
 }
 
-function doPositions(clef: Clef): number[] {
+function doPositions(clef: Clef, lo: number, hi: number): number[] {
   const out: number[] = [];
-  for (let p = MIN_POSITION; p <= MAX_POSITION; p++) {
+  for (let p = lo; p <= hi; p++) {
     if (isDo(p, clef)) {
       out.push(p);
     }
@@ -303,12 +309,14 @@ function sampleStartPosition(
   phraseCenter: number,
   forbid: number | null,
   rng: Rng,
+  lo: number,
+  hi: number,
 ): number {
   const wantDo = rng.next() < params.pStartDo;
-  let candidates = wantDo ? doPositions(clef) : null;
+  let candidates = wantDo ? doPositions(clef, lo, hi) : null;
   if (candidates === null || candidates.length === 0) {
     candidates = [];
-    for (let p = MIN_POSITION; p <= MAX_POSITION; p++) {
+    for (let p = lo; p <= hi; p++) {
       candidates.push(p);
     }
   }
@@ -318,7 +326,7 @@ function sampleStartPosition(
   if (candidates.length === 0) {
     // All do positions equal forbid; fall back to any other position.
     candidates = [];
-    for (let p = MIN_POSITION; p <= MAX_POSITION; p++) {
+    for (let p = lo; p <= hi; p++) {
       if (p !== forbid) {
         candidates.push(p);
       }
@@ -327,11 +335,7 @@ function sampleStartPosition(
   const weights = candidates.map((p) => rangeFalloff(p, phraseCenter, params.rangeHalf));
   const idx = sampleCategorical(weights, rng);
   if (idx < 0) {
-    return clamp(
-      phraseCenter === forbid ? phraseCenter + 1 : phraseCenter,
-      MIN_POSITION,
-      MAX_POSITION,
-    );
+    return clamp(phraseCenter === forbid ? phraseCenter + 1 : phraseCenter, lo, hi);
   }
   return candidates[idx];
 }
@@ -343,17 +347,17 @@ type MelodicState = {
   lastLeap: boolean;
 };
 
-function forceStepTowardCenter(pitch: number, center: number): number {
-  if (pitch < center && pitch < MAX_POSITION) {
+function forceStepTowardCenter(pitch: number, center: number, lo: number, hi: number): number {
+  if (pitch < center && pitch < hi) {
     return pitch + 1;
   }
-  if (pitch > center && pitch > MIN_POSITION) {
+  if (pitch > center && pitch > lo) {
     return pitch - 1;
   }
-  if (pitch < MAX_POSITION) {
+  if (pitch < hi) {
     return pitch + 1;
   }
-  if (pitch > MIN_POSITION) {
+  if (pitch > lo) {
     return pitch - 1;
   }
   return pitch;
@@ -364,6 +368,8 @@ function sampleNextPitch(
   params: DifficultyParams,
   phraseCenter: number,
   rng: Rng,
+  lo: number,
+  hi: number,
 ): { pitch: number; delta: number } {
   const candidates: number[] = [];
   const weights: number[] = [];
@@ -371,7 +377,7 @@ function sampleNextPitch(
   for (let s = 1; s <= params.maxLeap; s++) {
     for (const dir of [1, -1]) {
       const next = state.pitch + dir * s;
-      if (next < MIN_POSITION || next > MAX_POSITION) {
+      if (next < lo || next > hi) {
         continue;
       }
       let w = s === 1 ? params.pStep : (1 - params.pStep) * (params.leapWeights[s] ?? 0);
@@ -398,14 +404,14 @@ function sampleNextPitch(
 
   const idx = sampleCategorical(weights, rng);
   if (idx < 0) {
-    const pitch = forceStepTowardCenter(state.pitch, phraseCenter);
+    const pitch = forceStepTowardCenter(state.pitch, phraseCenter, lo, hi);
     const delta = pitch - state.pitch;
     return { pitch, delta };
   }
   const delta = candidates[idx];
-  const pitch = clamp(state.pitch + delta, MIN_POSITION, MAX_POSITION);
+  const pitch = clamp(state.pitch + delta, lo, hi);
   if (pitch === state.pitch) {
-    const forced = forceStepTowardCenter(state.pitch, phraseCenter);
+    const forced = forceStepTowardCenter(state.pitch, phraseCenter, lo, hi);
     return { pitch: forced, delta: forced - state.pitch };
   }
   return { pitch, delta };
@@ -418,10 +424,12 @@ function generateRun(
   difficulty: number,
   prevPosition: number | null,
   rng: Rng,
+  lo: number,
+  hi: number,
 ): number[] {
-  const phraseCenter = phraseCenterFor(difficulty, rng);
+  const phraseCenter = phraseCenterFor(difficulty, rng, lo, hi);
   const positions: number[] = [];
-  const pitch = sampleStartPosition(clef, params, phraseCenter, prevPosition, rng);
+  const pitch = sampleStartPosition(clef, params, phraseCenter, prevPosition, rng, lo, hi);
   positions.push(pitch);
 
   let state: MelodicState = {
@@ -432,7 +440,7 @@ function generateRun(
   };
 
   for (let i = 1; i < length; i++) {
-    const { pitch: next, delta } = sampleNextPitch(state, params, phraseCenter, rng);
+    const { pitch: next, delta } = sampleNextPitch(state, params, phraseCenter, rng, lo, hi);
     positions.push(next);
     const abs = Math.abs(delta);
     state = {
@@ -450,13 +458,20 @@ function generateRun(
  * Throws if `settings.clefs` is empty.
  */
 export function generateDrill(
-  settings: { clefs: readonly Clef[]; difficulty: number },
+  settings: {
+    clefs: readonly Clef[];
+    difficulty: number;
+    ledgerLines?: number;
+  },
   rng: Rng,
 ): DrillNote[] {
   if (settings.clefs.length < 1) {
     throw new Error("generateDrill requires at least one clef");
   }
 
+  const n = clampLedgerLines(settings.ledgerLines ?? DEFAULT_LEDGER_LINES);
+  const lo = minPosition(n);
+  const hi = maxPosition(n);
   const params = lerpDifficulty(settings.difficulty);
   const schedule = buildClefSchedule(settings.clefs, rng);
   const notes: DrillNote[] = [];
@@ -470,6 +485,8 @@ export function generateDrill(
       settings.difficulty,
       prevPosition,
       rng,
+      lo,
+      hi,
     );
     for (const position of positions) {
       notes.push({ position, clef: run.clef });

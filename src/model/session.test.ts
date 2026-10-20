@@ -67,11 +67,12 @@ const transport = (partial: Partial<TransportDraft> = {}): TransportDraft => ({
 });
 
 describe("createSession", () => {
-  it("defaults to treble-only, mix off, difficulty 3, bpm 80, revealN 1, reveal off, no answers", () => {
+  it("defaults to treble-only, mix off, difficulty 3, ledgerLines 3, bpm 80, revealN 1, reveal off, no answers", () => {
     const s = createSession();
     expect(s.settings.clefs).toEqual(["treble"]);
     expect(s.settings.mixClefs).toBe(false);
     expect(s.settings.difficulty).toBe(3);
+    expect(s.settings.ledgerLines).toBe(3);
     expect(s.settings.bpm).toBe(80);
     expect(s.settings.revealEnabled).toBe(false);
     expect(s.settings.revealN).toBe(1);
@@ -258,13 +259,14 @@ describe("remapNotesToClef", () => {
 });
 
 describe("isGenerateDirty", () => {
-  it("is dirty when mix clef set differs without Generate; bpm/showAnswers/reveal ignored", () => {
+  it("is dirty when mix clef set or ledgerLines differs without Generate; bpm/showAnswers/reveal ignored", () => {
     const notes = [note(10, "treble"), note(11, "bass")];
     const s = sessionWithNotes(notes, {
       settings: {
         clefs: ["treble", "bass"],
         mixClefs: true,
         difficulty: 3,
+        ledgerLines: 3,
         revealEnabled: true,
         revealN: 1,
         bpm: 80,
@@ -287,6 +289,12 @@ describe("isGenerateDirty", () => {
     expect(isGenerateDirty(s, draftClefs)).toBe(true);
     // Sequence clefs stay as generated until Generate (caller responsibility).
     expect(s.notes.map((n) => n.clef)).toEqual(["treble", "bass"]);
+
+    const draftLedgers: DrillSettings = {
+      ...s.settings,
+      ledgerLines: 0,
+    };
+    expect(isGenerateDirty(s, draftLedgers)).toBe(true);
   });
 
   it("is dirty for difficulty draft changes; reveal draft is not dirty", () => {

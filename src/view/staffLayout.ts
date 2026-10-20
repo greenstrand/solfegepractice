@@ -1,6 +1,6 @@
 /** Pure staff geometry: position index <-> SVG y. No DOM. */
 
-import { MAX_POSITION, MIDDLE_LINE, MIN_POSITION } from "../model/staffWindow";
+import { DEFAULT_LEDGER_LINES, MIDDLE_LINE, maxPosition, minPosition } from "../model/staffWindow";
 
 /** Pixels between adjacent staff lines (two position steps). */
 export const STAFF_SPACING = 10;
@@ -44,17 +44,26 @@ export function positionToY(position: number, middleLineY: number): number {
   return middleLineY - (position - MIDDLE_LINE) * POSITION_STEP;
 }
 
-/** Y of the middle staff line given top padding for the full 0..20 window. */
-export function middleLineYFromTop(padTop: number = STAFF_PAD_TOP): number {
-  return padTop + (MAX_POSITION - MIDDLE_LINE) * POSITION_STEP;
+/**
+ * Y of the middle staff line given top padding for the configured ledger window.
+ * Staff scale (POSITION_STEP) is constant; only reserved height changes with N.
+ */
+export function middleLineYFromTop(
+  padTop: number = STAFF_PAD_TOP,
+  ledgerLines: number = DEFAULT_LEDGER_LINES,
+): number {
+  return padTop + (maxPosition(ledgerLines) - MIDDLE_LINE) * POSITION_STEP;
 }
 
-/** Total SVG height for one staff row (notes + label band). */
+/** Total SVG height for one staff row (notes + label band) for the ledger window. */
 export function staffRowHeight(
   padTop: number = STAFF_PAD_TOP,
   padBottom: number = STAFF_PAD_BOTTOM,
+  ledgerLines: number = DEFAULT_LEDGER_LINES,
 ): number {
-  return padTop + (MAX_POSITION - MIN_POSITION) * POSITION_STEP + padBottom;
+  const lo = minPosition(ledgerLines);
+  const hi = maxPosition(ledgerLines);
+  return padTop + (hi - lo) * POSITION_STEP + padBottom;
 }
 
 /** X center of note at local slot index (0-based within the row). */
