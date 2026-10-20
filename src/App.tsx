@@ -1,8 +1,7 @@
+import { useDrillController } from "./controller/useDrillController";
+import { AppShell } from "./view/AppShell";
+
 export function App() {
-  return (
-    <main className="app-shell">
-      <h1>Fixed Dojo</h1>
-      <p className="subtitle">Fixed-do clef practice on the staff, one beat at a time.</p>
-    </main>
-  );
+  const drill = useDrillController();
+  return <AppShell drill={drill} />;
 }

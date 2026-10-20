@@ -1,0 +1,68 @@
+/* Score / staff ink on slate paper. */
+
+@font-face {
+  font-family: "Bravura";
+  src: url("/fonts/Bravura.otf") format("opentype");
+  font-display: block;
+}
+
+.score-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  color: var(--ink);
+  width: 100%;
+  min-width: 0;
+}
+
+.score-row {
+  line-height: 0;
+  width: 100%;
+}
+
+.staff-view {
+  display: block;
+  /* Intrinsic SVG width/height (1 user unit = 1 CSS px); do not stretch. */
+  width: auto;
+  height: auto;
+  max-width: none;
+  color: var(--ink);
+}
+
+.staff-view .staff-line {
+  stroke: #334155;
+  stroke-opacity: 0.78;
+}
+
+.staff-view .ledger-line {
+  stroke: #334155;
+}
+
+.staff-view .notehead {
+  fill: var(--ink);
+}
+
+.staff-view .clef-glyph {
+  font-family: "Bravura", serif;
+  fill: var(--ink);
+  pointer-events: none;
+  user-select: none;
+}
+
+.staff-view .playhead {
+  fill: var(--accent);
+  fill-opacity: 0.16;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-opacity: 0.55;
+  transition: x 90ms linear;
+}
+
+.staff-view .solfege-label {
+  fill: var(--accent);
+  font-size: 10px;
+  font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+}
