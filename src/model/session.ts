@@ -1,6 +1,6 @@
 /** Session transport and progressive-reveal visibility. Pure reducers; no DOM/rAF. */
 
-import type { Clef } from "./clefSolfegeMap";
+import { CLEFS, type Clef } from "./clefSolfegeMap";
 import {
   type DrillNote,
   type Rng,
@@ -65,18 +65,25 @@ export const DEFAULT_SETTINGS: DrillSettings = {
   revealEnabled: false,
 };
 
-function clampRevealN(n: number): number {
+export function clampRevealN(n: number): number {
   if (!Number.isFinite(n)) {
-    return 0;
+    return DEFAULT_SETTINGS.revealN;
   }
   return Math.max(0, Math.round(n));
 }
 
-function clampBpm(bpm: number): number {
+export function clampBpm(bpm: number): number {
   if (!Number.isFinite(bpm)) {
     return DEFAULT_SETTINGS.bpm;
   }
   return Math.min(240, Math.max(20, Math.round(bpm)));
+}
+
+export function clampDifficulty(d: number): number {
+  if (!Number.isFinite(d)) {
+    return DEFAULT_SETTINGS.difficulty;
+  }
+  return Math.min(10, Math.max(1, Math.round(d)));
 }
 
 export function createSession(overrides?: Partial<DrillSettings>): Session {
@@ -216,6 +223,44 @@ export function rescheduleClefs(session: Session, clefs: readonly Clef[], rng: R
     settings: { ...session.settings, clefs: nextClefs, mixClefs: true },
     notes,
   };
+}
+
+/**
+ * Mix on: set mixClefs true (notes unchanged).
+ * Mix off: remap all notes to the first selected clef (or treble) and clear mix.
+ */
+export function setMixClefs(session: Session, mix: boolean, _rng: Rng): Session {
+  if (mix) {
+    if (session.settings.mixClefs) {
+      return session;
+    }
+    return {
+      ...session,
+      settings: { ...session.settings, mixClefs: true },
+    };
+  }
+  const sole = session.settings.clefs[0] ?? "treble";
+  return remapNotesToClef(session, sole);
+}
+
+/**
+ * Single-clef: remap sequence to `clef`.
+ * Mix: toggle `clef` in the selection (never drop the last); reschedule when changed.
+ */
+export function toggleClef(session: Session, clef: Clef, rng: Rng): Session {
+  if (!session.settings.mixClefs) {
+    return remapNotesToClef(session, clef);
+  }
+  const has = session.settings.clefs.includes(clef);
+  if (has) {
+    if (session.settings.clefs.length <= 1) {
+      return session;
+    }
+    const nextClefs = session.settings.clefs.filter((c) => c !== clef);
+    return rescheduleClefs(session, nextClefs, rng);
+  }
+  const nextClefs = CLEFS.filter((c) => session.settings.clefs.includes(c) || c === clef);
+  return rescheduleClefs(session, nextClefs, rng);
 }
 
 /**

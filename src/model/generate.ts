@@ -1,6 +1,7 @@
 /** Positions-first drill generation; clef schedule overlay; difficulty lerp; no unisons. Pure given rng. */
 
 import { type Clef, isDo } from "./clefSolfegeMap";
+import type { Rng } from "./rng";
 import {
   DEFAULT_LEDGER_LINES,
   MIDDLE_LINE,
@@ -9,16 +10,13 @@ import {
   minPosition,
 } from "./staffWindow";
 
+export type { Rng };
+
 export const SEQUENCE_LENGTH = 256;
 
 export type DrillNote = {
   position: number;
   clef: Clef;
-};
-
-/** Uniform random in [0, 1). */
-export type Rng = {
-  next(): number;
 };
 
 type DifficultyParams = {
@@ -230,13 +228,13 @@ function sampleClefRunLength(rng: Rng): number {
   return CLEF_RUN_LENGTHS[idx < 0 ? 0 : idx];
 }
 
-export type ClefRun = { clef: Clef; length: number };
+type ClefRun = { clef: Clef; length: number };
 
 /**
  * Sample clef-run lengths covering `length` notes (default SEQUENCE_LENGTH).
  * Remainder=1 extends the previous run; adjacent runs prefer different clefs.
  */
-export function buildClefSchedule(
+function buildClefSchedule(
   clefs: readonly Clef[],
   rng: Rng,
   length: number = SEQUENCE_LENGTH,
@@ -435,7 +433,7 @@ function sampleNextPitch(
  * Sample one continuous staff-position stream. Clefs never influence intervals.
  * `startClefForDo` only biases the first note toward Do for that clef (whole-sequence start).
  */
-export function samplePositions(
+function samplePositions(
   length: number,
   difficulty: number,
   ledgerLines: number,
@@ -484,7 +482,7 @@ export function samplePositions(
 }
 
 /** Zip position stream with a clef-run schedule into DrillNotes. */
-export function zipDrill(positions: readonly number[], schedule: readonly ClefRun[]): DrillNote[] {
+function zipDrill(positions: readonly number[], schedule: readonly ClefRun[]): DrillNote[] {
   const clefs: Clef[] = [];
   for (const run of schedule) {
     for (let i = 0; i < run.length; i++) {
