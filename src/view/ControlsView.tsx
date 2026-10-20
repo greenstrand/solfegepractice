@@ -51,7 +51,7 @@ export function ControlsView({
 }: ControlsViewProps) {
   /** Difficulty / ledger lines need Generate; Mix locked while playing. */
   const genLocked = playing;
-  /** Single-clef (Mix off) remaps live — stay enabled mid-run. */
+  /** Single-clef (Mix off) remaps live - stay enabled mid-run. */
   const clefPickLocked = playing && draft.mixClefs;
   const clefInputType = draft.mixClefs ? "checkbox" : "radio";
 
@@ -83,7 +83,7 @@ export function ControlsView({
       <div className="controls-grid">
         <label className="control-field">
           <span className="control-label">BPM</span>
-          <div className="control-bpm-row">
+          <div className="control-slider-row">
             <input
               type="range"
               min={40}
@@ -106,7 +106,7 @@ export function ControlsView({
 
         <label className="control-field">
           <span className="control-label">Difficulty</span>
-          <div className="control-bpm-row">
+          <div className="control-slider-row">
             <input
               type="range"
               min={1}
@@ -188,7 +188,7 @@ export function ControlsView({
           </label>
           <label className="control-field control-ledger">
             <span className="control-label">Ledger lines</span>
-            <div className="control-bpm-row">
+            <div className="control-slider-row">
               <input
                 type="range"
                 min={MIN_LEDGER_LINES}

@@ -5,8 +5,7 @@ import type { DrillNote } from "../model/generate";
 import type { NoteVisibility } from "../model/session";
 import { DEFAULT_LEDGER_LINES } from "../model/staffWindow";
 import { StaffView } from "./StaffView";
-import { maxStaffRowWidth, notesPerRowFittingContent, notesPerRowForWidth } from "./staffLayout";
-import "../styles/score.css";
+import { maxStaffRowWidth, notesPerRowFittingContent } from "./staffLayout";
 
 export type ScoreViewProps = {
   notes: DrillNote[];
@@ -22,11 +21,6 @@ export type ScoreViewProps = {
 
 const MIN_NOTES_PER_ROW = 8;
 const MAX_NOTES_PER_ROW = 32;
-
-/** Notes-per-row from container width at fixed 1:1 staff geometry. */
-export function notesPerRowFromWidth(width: number): number {
-  return notesPerRowForWidth(width, MIN_NOTES_PER_ROW, MAX_NOTES_PER_ROW);
-}
 
 export function ScoreView({
   notes,

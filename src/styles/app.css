@@ -8,7 +8,6 @@
   --line: #c5d0dc;
   --accent: #0f7a7a;
   --accent-soft: rgba(15, 122, 122, 0.14);
-  --accent-hot: #c4781a;
   --shadow: 0 1px 0 rgba(28, 36, 48, 0.04), 0 12px 32px rgba(28, 36, 48, 0.06);
   font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
   line-height: 1.45;
@@ -151,19 +150,19 @@ body {
   color: var(--ink-muted);
 }
 
-.control-bpm-row {
+.control-slider-row {
   display: flex;
   align-items: center;
   gap: 0.65rem;
 }
 
-.control-bpm-row input[type="range"] {
+.control-slider-row input[type="range"] {
   flex: 1;
   min-width: 0;
   accent-color: var(--accent);
 }
 
-.control-bpm-row input[type="number"],
+.control-slider-row input[type="number"],
 .control-inline input[type="number"] {
   width: 4.25rem;
   border: 1px solid var(--line);

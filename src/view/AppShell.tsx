@@ -77,7 +77,7 @@ export function AppShell({ drill }: AppShellProps) {
         draft={draft}
         playing={session.playing}
         generateDirty={drill.generateDirty}
-        onGenerate={() => drill.onGenerate()}
+        onGenerate={drill.onGenerate}
         onPlay={drill.onPlay}
         onPause={drill.onPause}
         onStop={drill.onStop}
@@ -95,7 +95,7 @@ export function AppShell({ drill }: AppShellProps) {
         <ScoreView
           notes={session.notes}
           playhead={session.playhead}
-          visibilityFor={drill.visibilityForIndex}
+          visibilityFor={drill.visibilityFor}
           ledgerLines={session.settings.ledgerLines}
         />
       </section>

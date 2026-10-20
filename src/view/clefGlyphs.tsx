@@ -1,8 +1,14 @@
 /** Clef glyphs from Bravura (SMuFL). Placement only; meaning in clefSolfegeMap. */
 
 import type { Clef } from "../model/clefSolfegeMap";
-import { C_CLEF_CHAR, F_CLEF_CHAR, G_CLEF_CHAR } from "./bravuraClefPaths";
 import { STAFF_SPACING } from "./staffLayout";
+
+/** U+E050 gClef (Bravura / SIL OFL; see public/fonts/OFL.txt). */
+const G_CLEF_CHAR = "\uE050";
+/** U+E062 fClef */
+const F_CLEF_CHAR = "\uE062";
+/** U+E05C cClef */
+const C_CLEF_CHAR = "\uE05C";
 
 /** Staff position of each clef's reference pitch (G / F / C / C). */
 export const CLEF_REF_POSITION: Record<Clef, number> = {
