@@ -3,7 +3,7 @@
 import { solfegeFor } from "../model/clefSolfegeMap";
 import type { DrillNote } from "../model/generate";
 import type { NoteVisibility } from "../model/session";
-import { STAFF_LINES, ledgerLinesFor } from "../model/staffWindow";
+import { DEFAULT_LEDGER_LINES, STAFF_LINES, ledgerLinesFor } from "../model/staffWindow";
 import { CLEF_REF_POSITION, ClefGlyph } from "./clefGlyphs";
 import {
   LEDGER_HALF_WIDTH,
@@ -34,8 +34,6 @@ export type StaffViewProps = {
    * run began on a previous row.
    */
   showRowStartClef?: boolean;
-  /** Peek styling when Hold-F focus peek is active (labels come from visibilityFor). */
-  focusPeek?: boolean;
   showCursor?: boolean;
   /**
    * Horizontal slot capacity for this row (notes-per-row). Staff line span uses
@@ -47,6 +45,8 @@ export type StaffViewProps = {
    * absorb leftover into mid-clef pads or trailing end pad.
    */
   targetWidth?: number;
+  /** Max ledger lines above/below; drives reserved SVG height and ledger draw. */
+  ledgerLines?: number;
   className?: string;
 };
 
@@ -56,10 +56,10 @@ export function StaffView({
   playhead,
   visibilityFor,
   showRowStartClef = false,
-  focusPeek = false,
   showCursor = true,
   slotCount,
   targetWidth,
+  ledgerLines = DEFAULT_LEDGER_LINES,
   className = "staff-view",
 }: StaffViewProps) {
   const midClefs = midClefChangeCount(notes);
@@ -67,8 +67,8 @@ export function StaffView({
   // Width/height are CSS pixels: viewBox user units map 1:1 so STAFF_SPACING
   // and clef fontSize never depend on note count or mid-clef density.
   const { midClefGap, width } = equalizeRowToWidth(midClefs, targetWidth ?? 0, slots);
-  const height = staffRowHeight();
-  const midY = middleLineYFromTop();
+  const height = staffRowHeight(undefined, undefined, ledgerLines);
+  const midY = middleLineYFromTop(undefined, ledgerLines);
   const labelY = height - STAFF_PAD_BOTTOM / 2;
   const slotHalf = NOTE_SLOT_WIDTH / 2;
 
@@ -136,7 +136,7 @@ export function StaffView({
             ) : null}
 
             {vis.noteVisible
-              ? ledgerLinesFor(note.position).map((ledgerPos) => {
+              ? ledgerLinesFor(note.position, ledgerLines).map((ledgerPos) => {
                   const ly = positionToY(ledgerPos, midY);
                   return (
                     <line
@@ -167,7 +167,7 @@ export function StaffView({
 
             {vis.labelVisible ? (
               <text
-                className={`solfege-label${focusPeek ? " solfege-label-peek" : ""}`}
+                className="solfege-label"
                 x={cx}
                 y={labelY}
                 textAnchor="middle"

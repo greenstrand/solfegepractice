@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Clef } from "../model/clefSolfegeMap";
 import { CLEFS } from "../model/clefSolfegeMap";
 import type { Rng } from "../model/generate";
-import { SEQUENCE_LENGTH } from "../model/generate";
 import {
   DEFAULT_SETTINGS,
   type DrillSettings,
@@ -23,6 +22,7 @@ import {
   tick,
   visibilityFor,
 } from "../model/session";
+import { clampLedgerLines } from "../model/staffWindow";
 
 export type DrillController = {
   draft: DrillSettings;
@@ -34,6 +34,7 @@ export type DrillController = {
   generateDirty: boolean;
   setBpm: (bpm: number) => void;
   setDifficulty: (difficulty: number) => void;
+  setLedgerLines: (n: number) => void;
   setRevealEnabled: (enabled: boolean) => void;
   setRevealN: (n: number) => void;
   setShowAnswers: (show: boolean) => void;
@@ -44,7 +45,6 @@ export type DrillController = {
   onPause: () => void;
   onStop: () => void;
   visibilityForIndex: (index: number) => ReturnType<typeof visibilityFor>;
-  progressLabel: string;
 };
 
 const INITIAL_DRAFT: DrillSettings = { ...DEFAULT_SETTINGS };
@@ -164,6 +164,10 @@ export function useDrillController(): DrillController {
     setDraft((d) => ({ ...d, difficulty: clampDifficulty(difficulty) }));
   }, []);
 
+  const setLedgerLines = useCallback((n: number) => {
+    setDraft((d) => ({ ...d, ledgerLines: clampLedgerLines(n) }));
+  }, []);
+
   const setRevealEnabled = useCallback((enabled: boolean) => {
     setDraft((d) => ({ ...d, revealEnabled: enabled }));
     setSession((prev) => applyRevealEnabled(prev, enabled));
@@ -222,9 +226,6 @@ export function useDrillController(): DrillController {
     [session, focusPeek],
   );
 
-  const playheadDisplay = Math.min(session.playhead, SEQUENCE_LENGTH);
-  const progressLabel = `${playheadDisplay} / ${SEQUENCE_LENGTH}`;
-
   return {
     draft,
     session,
@@ -233,6 +234,7 @@ export function useDrillController(): DrillController {
     generateDirty,
     setBpm,
     setDifficulty,
+    setLedgerLines,
     setRevealEnabled,
     setRevealN,
     setShowAnswers,
@@ -243,6 +245,5 @@ export function useDrillController(): DrillController {
     onPause,
     onStop,
     visibilityForIndex,
-    progressLabel,
   };
 }

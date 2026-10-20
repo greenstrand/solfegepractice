@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { DrillNote } from "../model/generate";
 import type { NoteVisibility } from "../model/session";
+import { DEFAULT_LEDGER_LINES } from "../model/staffWindow";
 import { StaffView } from "./StaffView";
 import { maxStaffRowWidth, notesPerRowForWidth } from "./staffLayout";
 import "../styles/score.css";
@@ -13,9 +14,9 @@ export type ScoreViewProps = {
   visibilityFor: (index: number) => NoteVisibility;
   /** Override measured notes-per-row (tests). */
   notesPerRow?: number;
-  /** Peek label styling; label visibility comes from visibilityFor opts. */
-  focusPeek?: boolean;
   showCursor?: boolean;
+  /** Max ledger lines above/below; reserved staff height follows applied session. */
+  ledgerLines?: number;
   className?: string;
 };
 
@@ -32,8 +33,8 @@ export function ScoreView({
   playhead,
   visibilityFor,
   notesPerRow: notesPerRowProp,
-  focusPeek = false,
   showCursor = true,
+  ledgerLines = DEFAULT_LEDGER_LINES,
   className = "score-view",
 }: ScoreViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -82,11 +83,11 @@ export function ScoreView({
             startIndex={row.startIndex}
             playhead={playhead}
             visibilityFor={visibilityFor}
-            focusPeek={focusPeek}
             showRowStartClef
             showCursor={showCursor}
             slotCount={perRow}
             targetWidth={targetWidth}
+            ledgerLines={ledgerLines}
           />
         </div>
       ))}

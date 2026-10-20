@@ -3,18 +3,19 @@
 import type { Clef } from "../model/clefSolfegeMap";
 import { CLEFS } from "../model/clefSolfegeMap";
 import type { DrillSettings } from "../model/session";
+import { MAX_LEDGER_LINES, MIN_LEDGER_LINES } from "../model/staffWindow";
 
 export type ControlsViewProps = {
   draft: DrillSettings;
   playing: boolean;
   generateDirty: boolean;
-  progressLabel: string;
   onGenerate: () => void;
   onPlay: () => void;
   onPause: () => void;
   onStop: () => void;
   setBpm: (bpm: number) => void;
   setDifficulty: (difficulty: number) => void;
+  setLedgerLines: (n: number) => void;
   setRevealEnabled: (enabled: boolean) => void;
   setRevealN: (n: number) => void;
   setShowAnswers: (show: boolean) => void;
@@ -34,13 +35,13 @@ export function ControlsView({
   draft,
   playing,
   generateDirty,
-  progressLabel,
   onGenerate,
   onPlay,
   onPause,
   onStop,
   setBpm,
   setDifficulty,
+  setLedgerLines,
   setRevealEnabled,
   setRevealN,
   setShowAnswers,
@@ -48,7 +49,7 @@ export function ControlsView({
   toggleClef,
   className = "controls-view",
 }: ControlsViewProps) {
-  /** Difficulty / Mix / mix-clef set need Generate; locked while playing. */
+  /** Difficulty / Mix / mix-clef set / ledger lines need Generate; locked while playing. */
   const genLocked = playing;
   /** Single-clef (Mix off) remaps live — stay enabled mid-run. */
   const clefPickLocked = playing && draft.mixClefs;
@@ -65,18 +66,18 @@ export function ControlsView({
             Generate to apply
           </span>
         ) : null}
-        <button type="button" className="btn" onClick={onPlay} disabled={playing}>
-          Play
-        </button>
-        <button type="button" className="btn" onClick={onPause} disabled={!playing}>
-          Pause
-        </button>
+        {playing ? (
+          <button type="button" className="btn" onClick={onPause}>
+            Pause
+          </button>
+        ) : (
+          <button type="button" className="btn" onClick={onPlay}>
+            Play
+          </button>
+        )}
         <button type="button" className="btn" onClick={onStop}>
           Stop
         </button>
-        <span className="controls-progress" aria-live="polite">
-          {progressLabel}
-        </span>
       </div>
 
       <div className="controls-grid">
@@ -156,25 +157,27 @@ export function ControlsView({
         </fieldset>
 
         <div className="control-field control-toggles">
-          <label className="check-label">
-            <input
-              type="checkbox"
-              checked={draft.revealEnabled}
-              onChange={(e) => setRevealEnabled(e.target.checked)}
-            />
-            Progressive reveal
-          </label>
-          <label className="control-inline">
-            <span className="control-label">Notes ahead</span>
-            <input
-              type="number"
-              min={0}
-              value={draft.revealN}
-              disabled={!draft.revealEnabled}
-              onChange={(e) => setRevealN(Number(e.target.value))}
-              aria-label="Notes ahead"
-            />
-          </label>
+          <div className="control-reveal-row">
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={draft.revealEnabled}
+                onChange={(e) => setRevealEnabled(e.target.checked)}
+              />
+              Progressive reveal
+            </label>
+            <label className="control-inline">
+              <span className="control-label">Notes ahead</span>
+              <input
+                type="number"
+                min={0}
+                value={draft.revealN}
+                disabled={!draft.revealEnabled}
+                onChange={(e) => setRevealN(Number(e.target.value))}
+                aria-label="Notes ahead"
+              />
+            </label>
+          </div>
           <label className="check-label">
             <input
               type="checkbox"
@@ -182,6 +185,30 @@ export function ControlsView({
               onChange={(e) => setShowAnswers(e.target.checked)}
             />
             Show answers
+          </label>
+          <label className="control-field control-ledger">
+            <span className="control-label">Ledger lines</span>
+            <div className="control-bpm-row">
+              <input
+                type="range"
+                min={MIN_LEDGER_LINES}
+                max={MAX_LEDGER_LINES}
+                step={1}
+                value={draft.ledgerLines}
+                disabled={genLocked}
+                onChange={(e) => setLedgerLines(Number(e.target.value))}
+                aria-label="Ledger lines slider"
+              />
+              <input
+                type="number"
+                min={MIN_LEDGER_LINES}
+                max={MAX_LEDGER_LINES}
+                value={draft.ledgerLines}
+                disabled={genLocked}
+                onChange={(e) => setLedgerLines(Number(e.target.value))}
+                aria-label="Ledger lines"
+              />
+            </div>
           </label>
         </div>
       </div>

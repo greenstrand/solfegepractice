@@ -82,14 +82,6 @@ body {
   gap: 0.55rem;
 }
 
-.controls-progress {
-  margin-left: auto;
-  font-variant-numeric: tabular-nums;
-  font-size: 0.95rem;
-  color: var(--ink-muted);
-  font-weight: 600;
-}
-
 .controls-generate-hint {
   font-size: 0.85rem;
   color: var(--ink-muted);
@@ -206,9 +198,21 @@ body {
 
 .control-toggles {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.control-reveal-row {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem 1.1rem;
+}
+
+.control-ledger {
+  width: 100%;
 }
 
 .control-clefs legend {
@@ -250,19 +254,8 @@ body {
     width: 100%;
   }
 
-  .controls-progress {
-    margin-left: 0;
-    width: 100%;
-    text-align: center;
-  }
-
   .controls-grid {
     grid-template-columns: 1fr;
-  }
-
-  .control-toggles {
-    flex-direction: column;
-    align-items: flex-start;
   }
 
   .clef-checks {

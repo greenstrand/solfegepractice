@@ -21,7 +21,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 export function AppShell({ drill }: AppShellProps) {
-  const { draft, session, onPlay, onPause, setFocusPeek, focusPeek } = drill;
+  const { draft, session, onPlay, onPause, setFocusPeek } = drill;
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -77,13 +77,13 @@ export function AppShell({ drill }: AppShellProps) {
         draft={draft}
         playing={session.playing}
         generateDirty={drill.generateDirty}
-        progressLabel={drill.progressLabel}
         onGenerate={() => drill.onGenerate()}
         onPlay={drill.onPlay}
         onPause={drill.onPause}
         onStop={drill.onStop}
         setBpm={drill.setBpm}
         setDifficulty={drill.setDifficulty}
+        setLedgerLines={drill.setLedgerLines}
         setRevealEnabled={drill.setRevealEnabled}
         setRevealN={drill.setRevealN}
         setShowAnswers={drill.setShowAnswers}
@@ -96,7 +96,7 @@ export function AppShell({ drill }: AppShellProps) {
           notes={session.notes}
           playhead={session.playhead}
           visibilityFor={drill.visibilityForIndex}
-          focusPeek={focusPeek}
+          ledgerLines={session.settings.ledgerLines}
         />
       </section>
     </div>
