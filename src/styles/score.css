@@ -1,0 +1,54 @@
+/* Score / staff ink. Restyled in a later step; classNames stay stable. */
+
+.score-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: #1a1f2e;
+  overflow-x: auto;
+}
+
+.score-row {
+  line-height: 0;
+}
+
+.staff-view {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  color: #1a1f2e;
+}
+
+.staff-view .staff-line {
+  stroke: #2a3142;
+  stroke-opacity: 0.85;
+}
+
+.staff-view .ledger-line {
+  stroke: #2a3142;
+}
+
+.staff-view .notehead {
+  fill: #1a1f2e;
+}
+
+.staff-view .clef-glyph {
+  color: #1a1f2e;
+}
+
+.staff-view .playhead {
+  fill: #3d6ea8;
+  fill-opacity: 0.18;
+  stroke: #3d6ea8;
+  stroke-width: 1.5;
+  stroke-opacity: 0.55;
+}
+
+.staff-view .solfege-label {
+  fill: #4a5163;
+  font-size: 9px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+}
