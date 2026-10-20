@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { DrillNote } from "../model/generate";
 import type { NoteVisibility } from "../model/session";
 import { StaffView } from "./StaffView";
+import { notesPerRowForWidth } from "./staffLayout";
 import "../styles/score.css";
 
 export type ScoreViewProps = {
@@ -20,17 +21,10 @@ export type ScoreViewProps = {
 
 const MIN_NOTES_PER_ROW = 8;
 const MAX_NOTES_PER_ROW = 32;
-/** Approx px per note slot including amortized clef padding. */
-const PX_PER_NOTE_SLOT = 36;
 
+/** Notes-per-row from container width at fixed 1:1 staff geometry. */
 export function notesPerRowFromWidth(width: number): number {
-  if (!(width > 0)) {
-    return MAX_NOTES_PER_ROW;
-  }
-  return Math.min(
-    MAX_NOTES_PER_ROW,
-    Math.max(MIN_NOTES_PER_ROW, Math.floor(width / PX_PER_NOTE_SLOT)),
-  );
+  return notesPerRowForWidth(width, MIN_NOTES_PER_ROW, MAX_NOTES_PER_ROW);
 }
 
 export function ScoreView({
@@ -89,6 +83,7 @@ export function ScoreView({
             focusPeek={focusPeek}
             showRowStartClef
             showCursor={showCursor}
+            slotCount={perRow}
           />
         </div>
       ))}

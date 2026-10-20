@@ -22,8 +22,10 @@
 
 .staff-view {
   display: block;
-  width: 100%;
+  /* Intrinsic SVG width/height (1 user unit = 1 CSS px); do not stretch. */
+  width: auto;
   height: auto;
+  max-width: none;
   color: #1c2430;
 }
 

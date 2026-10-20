@@ -17,6 +17,15 @@ export const CLEF_INSET = 44;
 /** Extra horizontal gap before a mid-row clef change so the glyph clears the notehead. */
 export const MID_CLEF_EXTRA = Math.round(CLEF_INSET * 0.85);
 
+/** Trailing pad after the last note slot (right margin of a row). */
+export const STAFF_ROW_END_PAD = 8;
+
+/**
+ * Mid-clef gaps reserved when choosing notes-per-row from container width so
+ * dense clef-change rows rarely exceed the viewport at 1:1 user-unit scale.
+ */
+export const NOTES_PER_ROW_MID_CLEF_BUDGET = 2;
+
 /** Vertical padding above position MAX and below MIN for labels/ledgers. */
 export const STAFF_PAD_TOP = 8;
 export const STAFF_PAD_BOTTOM = 22;
@@ -92,5 +101,25 @@ export function staffRowWidth(
   clefInset: number = CLEF_INSET,
   midClefCount = 0,
 ): number {
-  return clefInset + noteCount * NOTE_SLOT_WIDTH + midClefCount * MID_CLEF_EXTRA + 8;
+  return (
+    clefInset + noteCount * NOTE_SLOT_WIDTH + midClefCount * MID_CLEF_EXTRA + STAFF_ROW_END_PAD
+  );
+}
+
+/**
+ * Notes that fit in `widthPx` at 1:1 user-unit scale (1 unit = 1 CSS px).
+ * Reserves {@link NOTES_PER_ROW_MID_CLEF_BUDGET} mid-clef gaps.
+ */
+export function notesPerRowForWidth(
+  widthPx: number,
+  minNotes: number,
+  maxNotes: number,
+  midClefBudget: number = NOTES_PER_ROW_MID_CLEF_BUDGET,
+): number {
+  if (!(widthPx > 0)) {
+    return maxNotes;
+  }
+  const usable = widthPx - CLEF_INSET - STAFF_ROW_END_PAD - midClefBudget * MID_CLEF_EXTRA;
+  const count = Math.floor(usable / NOTE_SLOT_WIDTH);
+  return Math.min(maxNotes, Math.max(minNotes, count));
 }

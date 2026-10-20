@@ -37,6 +37,11 @@ export type StaffViewProps = {
   /** Peek styling when Hold-F focus peek is active (labels come from visibilityFor). */
   focusPeek?: boolean;
   showCursor?: boolean;
+  /**
+   * Horizontal slot capacity for this row (notes-per-row). Staff line span uses
+   * max(notes.length, slotCount) so short final rows keep the same 1:1 scale.
+   */
+  slotCount?: number;
   className?: string;
 };
 
@@ -48,10 +53,14 @@ export function StaffView({
   showRowStartClef = false,
   focusPeek = false,
   showCursor = true,
+  slotCount,
   className = "staff-view",
 }: StaffViewProps) {
   const midClefs = midClefChangeCount(notes);
-  const width = staffRowWidth(notes.length, undefined, midClefs);
+  const slots = Math.max(notes.length, slotCount ?? notes.length);
+  // Width/height are CSS pixels: viewBox user units map 1:1 so STAFF_SPACING
+  // and clef fontSize never depend on note count or mid-clef density.
+  const width = staffRowWidth(slots, undefined, midClefs);
   const height = staffRowHeight();
   const midY = middleLineYFromTop();
   const labelY = height - STAFF_PAD_BOTTOM / 2;
@@ -69,9 +78,10 @@ export function StaffView({
   return (
     <svg
       className={className}
-      width="100%"
+      width={width}
+      height={height}
       viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="xMidYMid meet"
+      preserveAspectRatio="xMinYMid meet"
       role="img"
       aria-label="Staff row"
     >
