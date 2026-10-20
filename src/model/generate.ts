@@ -40,7 +40,7 @@ type ScalarAnchor = {
   rangeHalf: number;
 };
 
-/** Anchor difficulties from music-research.md section 3.1. */
+/** Scalar difficulty anchors at d = 1, 3, 5, 7, 10 (lerp between neighbors). */
 const SCALAR_ANCHORS: readonly ScalarAnchor[] = [
   {
     d: 1,
@@ -100,7 +100,7 @@ const SCALAR_ANCHORS: readonly ScalarAnchor[] = [
 ];
 
 /**
- * Relative leap weights for s = 2..14 at anchors (music-research 3.2).
+ * Relative leap weights for interval sizes s = 2..14 at the same difficulty anchors.
  * Buckets 8-10 and 11-14 are split evenly across their sizes.
  */
 const LEAP_WEIGHT_ANCHORS: ReadonlyArray<{ d: number; weights: number[] }> = [
@@ -111,7 +111,7 @@ const LEAP_WEIGHT_ANCHORS: ReadonlyArray<{ d: number; weights: number[] }> = [
   { d: 10, weights: expandLeapRow(0.1, 0.1, 0.12, 0.1, 0.1, 0.14, 0.14, 0.2) },
 ];
 
-/** Clef-run length PMF: L in 2..16, peak at 8 (music-research section 5). */
+/** Clef-run length PMF: L in 2..16 with peak probability at L = 8. */
 const CLEF_RUN_LENGTHS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] as const;
 const CLEF_RUN_PMF = [
   0.02, 0.04, 0.06, 0.08, 0.1, 0.14, 0.18, 0.14, 0.09, 0.06, 0.04, 0.02, 0.015, 0.01, 0.005,

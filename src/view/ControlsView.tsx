@@ -1,11 +1,11 @@
 /** Draft settings + transport controls. Props-driven; no session math. */
 
-import type { DraftSettings } from "../controller/useDrillController";
 import type { Clef } from "../model/clefSolfegeMap";
 import { CLEFS } from "../model/clefSolfegeMap";
+import type { DrillSettings } from "../model/session";
 
 export type ControlsViewProps = {
-  draft: DraftSettings;
+  draft: DrillSettings;
   playing: boolean;
   progressLabel: string;
   onGenerate: () => void;
@@ -137,14 +137,14 @@ export function ControlsView({
             Progressive reveal
           </label>
           <label className="control-inline">
-            <span className="control-label">N</span>
+            <span className="control-label">Notes ahead</span>
             <input
               type="number"
-              min={1}
+              min={0}
               value={draft.revealN}
               disabled={!draft.revealEnabled}
               onChange={(e) => setRevealN(Number(e.target.value))}
-              aria-label="Reveal ahead count"
+              aria-label="Notes ahead"
             />
           </label>
           <label className="check-label">

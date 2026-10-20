@@ -64,13 +64,13 @@ const transport = (partial: Partial<TransportDraft> = {}): TransportDraft => ({
 });
 
 describe("createSession", () => {
-  it("defaults to treble-only, difficulty 3, bpm 80, reveal off, no answers", () => {
+  it("defaults to treble-only, difficulty 3, bpm 80, revealN 1, reveal off, no answers", () => {
     const s = createSession();
     expect(s.settings.clefs).toEqual(["treble"]);
     expect(s.settings.difficulty).toBe(3);
     expect(s.settings.bpm).toBe(80);
     expect(s.settings.revealEnabled).toBe(false);
-    expect(s.settings.revealN).toBe(0);
+    expect(s.settings.revealN).toBe(1);
     expect(s.settings.showAnswers).toBe(false);
     expect(s.playhead).toBe(0);
     expect(s.playing).toBe(false);
@@ -125,6 +125,13 @@ describe("play / tick BPM advance", () => {
     expect(s.settings.showAnswers).toBe(true);
     expect(s.playing).toBe(true);
     expect(s.lastTickMs).toBe(100);
+  });
+
+  it("play clamps revealN to >= 0", () => {
+    const notes = [note(10, "treble")];
+    let s = sessionWithNotes(notes);
+    s = play(s, transport({ revealN: -3 }), 0);
+    expect(s.settings.revealN).toBe(0);
   });
 });
 
@@ -199,6 +206,14 @@ describe("reveal N and clef co-reveal", () => {
     note(10, "bass"),
   ];
 
+  function clefOnsetIndex(notes: readonly DrillNote[], index: number): number {
+    let i = index;
+    while (i > 0 && notes[i].clef === notes[i - 1].clef) {
+      i -= 1;
+    }
+    return i;
+  }
+
   it("revealN shows notes through playhead + revealN; hide beyond", () => {
     const s = sessionWithNotes(runNotes, {
       playhead: 2,
@@ -220,7 +235,7 @@ describe("reveal N and clef co-reveal", () => {
     }
   });
 
-  it("clef co-reveal at boundary: onset clef visible when playhead enters new run", () => {
+  it("PREFIX window: onset clef visible when its note is in the visible prefix", () => {
     // Playhead mid bass run; treble onset at 0, bass onset at 5
     const s = sessionWithNotes(runNotes, {
       playhead: 6,
@@ -234,7 +249,26 @@ describe("reveal N and clef co-reveal", () => {
     expect(visibilityFor(s, 7).noteVisible).toBe(false);
   });
 
-  it("labels visible only when showAnswers and noteVisible", () => {
+  it("invariant: if due note visible then onset noteVisible and clefVisible", () => {
+    const playheads = [0, 2, 4, 5, 6, 7];
+    for (const playhead of playheads) {
+      const s = sessionWithNotes(runNotes, {
+        playhead,
+        settings: { revealEnabled: true, revealN: 1 },
+      });
+      if (playhead < 0 || playhead >= runNotes.length) {
+        continue;
+      }
+      if (!visibilityFor(s, playhead).noteVisible) {
+        continue;
+      }
+      const onset = clefOnsetIndex(runNotes, playhead);
+      expect(visibilityFor(s, onset).noteVisible).toBe(true);
+      expect(visibilityFor(s, onset).clefVisible).toBe(true);
+    }
+  });
+
+  it("labels visible when showAnswers and noteVisible", () => {
     const hidden = sessionWithNotes(runNotes, {
       playhead: 0,
       settings: { revealEnabled: true, revealN: 0, showAnswers: true },
@@ -247,6 +281,17 @@ describe("reveal N and clef co-reveal", () => {
       settings: { revealEnabled: false, showAnswers: false },
     });
     expect(visibilityFor(noAnswers, 0).labelVisible).toBe(false);
+  });
+
+  it("focusPeek labels only the playhead index when noteVisible", () => {
+    const s = sessionWithNotes(runNotes, {
+      playhead: 2,
+      settings: { revealEnabled: true, revealN: 1, showAnswers: false },
+    });
+    expect(visibilityFor(s, 2, { focusPeek: true }).labelVisible).toBe(true);
+    expect(visibilityFor(s, 0, { focusPeek: true }).labelVisible).toBe(false);
+    expect(visibilityFor(s, 3, { focusPeek: true }).labelVisible).toBe(false);
+    expect(visibilityFor(s, 2, { focusPeek: false }).labelVisible).toBe(false);
   });
 });
 

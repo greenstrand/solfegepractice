@@ -79,24 +79,13 @@ describe("generateDrill", () => {
     const total = runs.reduce((acc, r) => acc + r.length, 0);
     expect(total).toBe(SEQUENCE_LENGTH);
 
-    // Min run length is 2 except the extend-previous remainder rule may only
-    // increase a prior run; never a new sampled run of length 1 in the middle.
-    for (let i = 0; i < runs.length; i++) {
-      if (i < runs.length - 1) {
-        expect(runs[i].length).toBeGreaterThanOrEqual(2);
-      } else {
-        // Final run may be 1 only if remainder forced extend into a new illegal
-        // sample that was clamped; plan prefers extending previous, so final
-        // should also be >= 2 when SEQUENCE_LENGTH allows.
-        expect(runs[i].length).toBeGreaterThanOrEqual(1);
-      }
+    // Sampled run lengths are in 2..16; remainder=1 extends the previous run
+    // (never starts a new run of length 1), so every run covering 256 is >= 2.
+    // Extending a length-16 sample by 1 yields at most 17.
+    for (const run of runs) {
+      expect(run.length).toBeGreaterThanOrEqual(2);
+      expect(run.length).toBeLessThanOrEqual(17);
     }
-    // With remainder rule, at most one run of length 1 should never appear as a
-    // brand-new sample when remaining was 1 - that case extends previous, so
-    // after a full 256 cover with min sample 2, all runs should be >= 2.
-    expect(runs.every((r) => r.length >= 2)).toBe(true);
-    // Sampled L is at most 16; remainder extend may bump previous by 1 => 17.
-    expect(runs.every((r) => r.length <= 17)).toBe(true);
   });
 
   it("diff 1 has higher step rate and smaller mean abs delta than diff 10", () => {

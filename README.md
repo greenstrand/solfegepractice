@@ -6,7 +6,7 @@ Fixed-do clef solfege drill: paced staff practice with React and SVG notation.
 
 1. `npm install` then `npm run dev` and open the local URL.
 2. Pick clefs, difficulty (1-10), and BPM; hit **Generate** for a 256-note sequence.
-3. **Play** / **Pause** / **Stop** (or Space when focus is not in an input). Optional progressive reveal and show-answers live under the transport.
+3. **Play** / **Pause** / **Stop** (or Space when focus is not in an input). Progressive reveal shows notes from the start through the playhead plus N notes ahead; show-answers and Hold-F peek live under the transport.
 
 ## Keyboard shortcuts
 

@@ -40,14 +40,26 @@ export type NoteVisibility = {
   labelVisible: boolean;
 };
 
+export type VisibilityOpts = {
+  /** Hold-F focus peek: label the playhead index when its note is visible. */
+  focusPeek?: boolean;
+};
+
 export const DEFAULT_SETTINGS: DrillSettings = {
   clefs: ["treble"],
   difficulty: 3,
   bpm: 80,
-  revealN: 0,
+  revealN: 1,
   showAnswers: false,
   revealEnabled: false,
 };
+
+function clampRevealN(n: number): number {
+  if (!Number.isFinite(n)) {
+    return 0;
+  }
+  return Math.max(0, Math.round(n));
+}
 
 export function createSession(overrides?: Partial<DrillSettings>): Session {
   return {
@@ -86,7 +98,7 @@ export function play(session: Session, draft: TransportDraft, nowMs: number): Se
     settings: {
       ...session.settings,
       bpm: draft.bpm,
-      revealN: draft.revealN,
+      revealN: clampRevealN(draft.revealN),
       revealEnabled: draft.revealEnabled,
       showAnswers: draft.showAnswers,
     },
@@ -172,52 +184,31 @@ function advanceByTime(session: Session, nowMs: number): Session {
   };
 }
 
-function clefOnsetIndex(notes: readonly DrillNote[], index: number): number {
-  let i = index;
-  while (i > 0 && notes[i].clef === notes[i - 1].clef) {
-    i -= 1;
-  }
-  return i;
-}
-
 /**
  * Visibility for note at index.
- * If !revealEnabled, all notes visible.
- * If revealEnabled, note visible when 0 <= index <= playhead + revealN.
- * Clef glyph at i when note i is visible and i is a clef-run onset (i===0 or clef
- * change). When the playhead (due) note is visible, expand the window left to
- * include its clef-run start so the defining clef stays shown.
+ * If !revealEnabled, all notes are visible.
+ * If revealEnabled, PREFIX window: notes visible for 0 <= index <= playhead + revealN
+ * (revealN clamped to >= 0).
+ * clefVisible when noteVisible and index is a clef-run onset (index === 0 or clef change).
+ * labelVisible when noteVisible and (showAnswers or focusPeek on this playhead index).
  */
-export function visibilityFor(session: Session, index: number): NoteVisibility {
+export function visibilityFor(
+  session: Session,
+  index: number,
+  opts?: VisibilityOpts,
+): NoteVisibility {
   const { notes, settings, playhead } = session;
   if (index < 0 || index >= notes.length) {
     return { noteVisible: false, clefVisible: false, labelVisible: false };
   }
 
-  let noteVisible: boolean;
-  if (!settings.revealEnabled) {
-    noteVisible = true;
-  } else {
-    let lo = 0;
-    const hi = playhead + settings.revealN;
-    const due =
-      playhead >= 0 && playhead < notes.length
-        ? playhead
-        : playhead >= SEQUENCE_LENGTH && notes.length > 0
-          ? notes.length - 1
-          : -1;
-    if (due >= 0 && due <= hi) {
-      const onset = clefOnsetIndex(notes, due);
-      if (onset < lo) {
-        lo = onset;
-      }
-    }
-    noteVisible = index >= lo && index <= hi;
-  }
+  const revealN = clampRevealN(settings.revealN);
+  const noteVisible = !settings.revealEnabled || index <= playhead + revealN;
 
   const isOnset = index === 0 || notes[index].clef !== notes[index - 1].clef;
   const clefVisible = noteVisible && isOnset;
-  const labelVisible = settings.showAnswers && noteVisible;
+  const focusPeekHere = opts?.focusPeek === true && index === playhead;
+  const labelVisible = (settings.showAnswers || focusPeekHere) && noteVisible;
 
   return { noteVisible, clefVisible, labelVisible };
 }

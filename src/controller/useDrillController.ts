@@ -6,6 +6,7 @@ import { CLEFS } from "../model/clefSolfegeMap";
 import type { Rng } from "../model/generate";
 import { SEQUENCE_LENGTH } from "../model/generate";
 import {
+  DEFAULT_SETTINGS,
   type DrillSettings,
   type Session,
   setShowAnswers as applyShowAnswers,
@@ -18,10 +19,8 @@ import {
   visibilityFor,
 } from "../model/session";
 
-export type DraftSettings = DrillSettings;
-
 export type DrillController = {
-  draft: DraftSettings;
+  draft: DrillSettings;
   session: Session;
   /** Hold-F focus peek: show only the playhead note's solfege. */
   focusPeek: boolean;
@@ -40,14 +39,7 @@ export type DrillController = {
   progressLabel: string;
 };
 
-const INITIAL_DRAFT: DraftSettings = {
-  clefs: ["treble"],
-  difficulty: 3,
-  bpm: 80,
-  revealN: 1,
-  showAnswers: false,
-  revealEnabled: false,
-};
+const INITIAL_DRAFT: DrillSettings = { ...DEFAULT_SETTINGS };
 
 function mathRng(): Rng {
   return { next: () => Math.random() };
@@ -83,13 +75,13 @@ function clampDifficulty(d: number): number {
 
 function clampRevealN(n: number): number {
   if (!Number.isFinite(n)) {
-    return 1;
+    return DEFAULT_SETTINGS.revealN;
   }
-  return Math.max(1, Math.round(n));
+  return Math.max(0, Math.round(n));
 }
 
 export function useDrillController(): DrillController {
-  const [draft, setDraft] = useState<DraftSettings>(INITIAL_DRAFT);
+  const [draft, setDraft] = useState<DrillSettings>(INITIAL_DRAFT);
   const [session, setSession] = useState<Session>(() => createSession(INITIAL_DRAFT));
   const [focusPeek, setFocusPeek] = useState(false);
   const didMountGenerate = useRef(false);
@@ -192,8 +184,8 @@ export function useDrillController(): DrillController {
   }, []);
 
   const visibilityForIndex = useCallback(
-    (index: number) => visibilityFor(session, index),
-    [session],
+    (index: number) => visibilityFor(session, index, { focusPeek }),
+    [session, focusPeek],
   );
 
   const playheadDisplay = Math.min(session.playhead, SEQUENCE_LENGTH);

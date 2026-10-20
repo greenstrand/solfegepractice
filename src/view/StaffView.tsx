@@ -32,7 +32,7 @@ export type StaffViewProps = {
    * run began on a previous row.
    */
   showRowStartClef?: boolean;
-  /** Hold-to-peek: show solfege only under the playhead note. */
+  /** Peek styling when Hold-F focus peek is active (labels come from visibilityFor). */
   focusPeek?: boolean;
   showCursor?: boolean;
   className?: string;
@@ -93,9 +93,6 @@ export function StaffView({
         const cy = positionToY(note.position, midY);
         const showClef =
           vis.noteVisible && (vis.clefVisible || (localIndex === 0 && showRowStartClef));
-        const showLabel = focusPeek
-          ? absoluteIndex === playhead && vis.noteVisible
-          : vis.labelVisible;
 
         return (
           <g key={absoluteIndex} className="staff-note" data-index={absoluteIndex}>
@@ -137,7 +134,7 @@ export function StaffView({
               />
             ) : null}
 
-            {showLabel ? (
+            {vis.labelVisible ? (
               <text
                 className={`solfege-label${focusPeek ? " solfege-label-peek" : ""}`}
                 x={cx}

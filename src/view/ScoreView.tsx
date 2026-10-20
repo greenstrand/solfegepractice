@@ -12,7 +12,7 @@ export type ScoreViewProps = {
   visibilityFor: (index: number) => NoteVisibility;
   /** Override measured notes-per-row (tests). */
   notesPerRow?: number;
-  /** When true, show solfege only under the playhead note. */
+  /** Peek label styling; label visibility comes from visibilityFor opts. */
   focusPeek?: boolean;
   showCursor?: boolean;
   className?: string;
