@@ -8,6 +8,13 @@ Fixed-do clef solfege drill: paced staff practice with React and SVG notation.
 2. Pick clefs, difficulty (1-10), and BPM; hit **Generate** for a 256-note sequence.
 3. **Play** / **Pause** / **Stop** (or Space when focus is not in an input). Optional progressive reveal and show-answers live under the transport.
 
+## Keyboard shortcuts
+
+| Key | Action |
+| --- | --- |
+| Space | Play / pause (ignored while typing in an input) |
+| F | Hold to focus-peek: show only the current playhead note's solfege |
+
 ## Install
 
 ```bash

@@ -9,6 +9,7 @@ import {
   generate,
   pause,
   play,
+  setShowAnswers,
   stop,
   tick,
   visibilityFor,
@@ -124,6 +125,37 @@ describe("play / tick BPM advance", () => {
     expect(s.settings.showAnswers).toBe(true);
     expect(s.playing).toBe(true);
     expect(s.lastTickMs).toBe(100);
+  });
+});
+
+describe("setShowAnswers", () => {
+  it("toggles showAnswers live without changing notes or transport", () => {
+    const notes = [note(8, "treble"), note(9, "treble")];
+    let s = sessionWithNotes(notes, {
+      playhead: 1,
+      playing: true,
+      beatPhase: 0.25,
+      lastTickMs: 500,
+      settings: { showAnswers: false, bpm: 90 },
+    });
+    s = setShowAnswers(s, true);
+    expect(s.settings.showAnswers).toBe(true);
+    expect(s.settings.bpm).toBe(90);
+    expect(s.notes).toEqual(notes);
+    expect(s.playhead).toBe(1);
+    expect(s.playing).toBe(true);
+    expect(s.beatPhase).toBe(0.25);
+    expect(s.lastTickMs).toBe(500);
+    expect(visibilityFor(s, 0).labelVisible).toBe(true);
+
+    s = setShowAnswers(s, false);
+    expect(s.settings.showAnswers).toBe(false);
+    expect(visibilityFor(s, 0).labelVisible).toBe(false);
+  });
+
+  it("returns same session when value unchanged", () => {
+    const s = sessionWithNotes([note(10, "treble")], { settings: { showAnswers: true } });
+    expect(setShowAnswers(s, true)).toBe(s);
   });
 });
 

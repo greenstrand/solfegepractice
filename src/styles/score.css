@@ -5,16 +5,18 @@
   flex-direction: column;
   gap: 0.85rem;
   color: #1c2430;
-  overflow-x: auto;
+  width: 100%;
+  min-width: 0;
 }
 
 .score-row {
   line-height: 0;
+  width: 100%;
 }
 
 .staff-view {
   display: block;
-  max-width: 100%;
+  width: 100%;
   height: auto;
   color: #1c2430;
 }
@@ -42,6 +44,7 @@
   stroke: #0f7a7a;
   stroke-width: 1.5;
   stroke-opacity: 0.55;
+  transition: x 90ms linear;
 }
 
 .staff-view .solfege-label {
@@ -51,4 +54,9 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: lowercase;
+}
+
+.staff-view .solfege-label-peek {
+  fill: #0f7a7a;
+  font-size: 11px;
 }

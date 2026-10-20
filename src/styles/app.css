@@ -216,7 +216,8 @@ body {
   border-radius: 16px;
   padding: 1.15rem 1rem 1.35rem;
   box-shadow: var(--shadow);
-  overflow-x: auto;
+  overflow-x: hidden;
+  min-width: 0;
 }
 
 .score-panel:focus-within {
@@ -230,8 +231,36 @@ body {
     gap: 1.1rem;
   }
 
+  .controls-view {
+    padding: 0.9rem 0.85rem 1rem;
+  }
+
+  .controls-transport {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .controls-transport .btn {
+    width: 100%;
+  }
+
   .controls-progress {
     margin-left: 0;
     width: 100%;
+    text-align: center;
+  }
+
+  .controls-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .control-toggles {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .clef-checks {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

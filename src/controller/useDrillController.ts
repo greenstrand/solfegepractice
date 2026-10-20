@@ -8,6 +8,7 @@ import { SEQUENCE_LENGTH } from "../model/generate";
 import {
   type DrillSettings,
   type Session,
+  setShowAnswers as applyShowAnswers,
   createSession,
   generate,
   pause,
@@ -22,6 +23,9 @@ export type DraftSettings = DrillSettings;
 export type DrillController = {
   draft: DraftSettings;
   session: Session;
+  /** Hold-F focus peek: show only the playhead note's solfege. */
+  focusPeek: boolean;
+  setFocusPeek: (on: boolean) => void;
   setBpm: (bpm: number) => void;
   setDifficulty: (difficulty: number) => void;
   setRevealEnabled: (enabled: boolean) => void;
@@ -87,6 +91,7 @@ function clampRevealN(n: number): number {
 export function useDrillController(): DrillController {
   const [draft, setDraft] = useState<DraftSettings>(INITIAL_DRAFT);
   const [session, setSession] = useState<Session>(() => createSession(INITIAL_DRAFT));
+  const [focusPeek, setFocusPeek] = useState(false);
   const didMountGenerate = useRef(false);
 
   const onGenerate = useCallback(
@@ -169,6 +174,7 @@ export function useDrillController(): DrillController {
 
   const setShowAnswers = useCallback((show: boolean) => {
     setDraft((d) => ({ ...d, showAnswers: show }));
+    setSession((prev) => applyShowAnswers(prev, show));
   }, []);
 
   const toggleClef = useCallback((clef: Clef) => {
@@ -196,6 +202,8 @@ export function useDrillController(): DrillController {
   return {
     draft,
     session,
+    focusPeek,
+    setFocusPeek,
     setBpm,
     setDifficulty,
     setRevealEnabled,

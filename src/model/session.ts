@@ -95,6 +95,17 @@ export function play(session: Session, draft: TransportDraft, nowMs: number): Se
   };
 }
 
+/** Patch showAnswers on the live session without regenerating or touching transport. */
+export function setShowAnswers(session: Session, showAnswers: boolean): Session {
+  if (session.settings.showAnswers === showAnswers) {
+    return session;
+  }
+  return {
+    ...session,
+    settings: { ...session.settings, showAnswers },
+  };
+}
+
 /** Absorb elapsed time into playhead/phase, then freeze (playing false). */
 export function pause(session: Session, nowMs: number): Session {
   if (!session.playing) {

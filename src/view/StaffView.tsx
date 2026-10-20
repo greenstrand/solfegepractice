@@ -32,6 +32,8 @@ export type StaffViewProps = {
    * run began on a previous row.
    */
   showRowStartClef?: boolean;
+  /** Hold-to-peek: show solfege only under the playhead note. */
+  focusPeek?: boolean;
   showCursor?: boolean;
   className?: string;
 };
@@ -42,6 +44,7 @@ export function StaffView({
   playhead,
   visibilityFor,
   showRowStartClef = false,
+  focusPeek = false,
   showCursor = true,
   className = "staff-view",
 }: StaffViewProps) {
@@ -59,9 +62,9 @@ export function StaffView({
   return (
     <svg
       className={className}
-      width={width}
-      height={height}
+      width="100%"
       viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label="Staff row"
     >
@@ -90,6 +93,9 @@ export function StaffView({
         const cy = positionToY(note.position, midY);
         const showClef =
           vis.noteVisible && (vis.clefVisible || (localIndex === 0 && showRowStartClef));
+        const showLabel = focusPeek
+          ? absoluteIndex === playhead && vis.noteVisible
+          : vis.labelVisible;
 
         return (
           <g key={absoluteIndex} className="staff-note" data-index={absoluteIndex}>
@@ -131,9 +137,9 @@ export function StaffView({
               />
             ) : null}
 
-            {vis.labelVisible ? (
+            {showLabel ? (
               <text
-                className="solfege-label"
+                className={`solfege-label${focusPeek ? " solfege-label-peek" : ""}`}
                 x={cx}
                 y={labelY}
                 textAnchor="middle"

@@ -21,26 +21,50 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 export function AppShell({ drill }: AppShellProps) {
-  const { draft, session, onPlay, onPause } = drill;
+  const { draft, session, onPlay, onPause, setFocusPeek, focusPeek } = drill;
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.code !== "Space" && event.key !== " ") {
-        return;
-      }
       if (isTypingTarget(event.target)) {
         return;
       }
-      event.preventDefault();
-      if (session.playing) {
-        onPause();
-      } else {
-        onPlay();
+
+      if (event.code === "Space" || event.key === " ") {
+        event.preventDefault();
+        if (session.playing) {
+          onPause();
+        } else {
+          onPlay();
+        }
+        return;
+      }
+
+      if (event.key === "f" || event.key === "F") {
+        if (event.repeat) {
+          return;
+        }
+        event.preventDefault();
+        setFocusPeek(true);
       }
     };
+
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "f" || event.key === "F") {
+        setFocusPeek(false);
+      }
+    };
+
+    const clearPeek = () => setFocusPeek(false);
+
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [session.playing, onPlay, onPause]);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", clearPeek);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", clearPeek);
+    };
+  }, [session.playing, onPlay, onPause, setFocusPeek]);
 
   return (
     <div className="app-shell">
@@ -70,6 +94,7 @@ export function AppShell({ drill }: AppShellProps) {
           notes={session.notes}
           playhead={session.playhead}
           visibilityFor={drill.visibilityForIndex}
+          focusPeek={focusPeek}
         />
       </section>
     </div>
