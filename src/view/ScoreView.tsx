@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { DrillNote } from "../model/generate";
 import type { NoteVisibility } from "../model/session";
 import { StaffView } from "./StaffView";
-import { notesPerRowForWidth } from "./staffLayout";
+import { maxStaffRowWidth, notesPerRowForWidth } from "./staffLayout";
 import "../styles/score.css";
 
 export type ScoreViewProps = {
@@ -71,6 +71,8 @@ export function ScoreView({
     });
   }
 
+  const targetWidth = maxStaffRowWidth(rows, perRow);
+
   return (
     <div ref={containerRef} className={className} aria-label="Score">
       {rows.map((row) => (
@@ -84,6 +86,7 @@ export function ScoreView({
             showRowStartClef
             showCursor={showCursor}
             slotCount={perRow}
+            targetWidth={targetWidth}
           />
         </div>
       ))}

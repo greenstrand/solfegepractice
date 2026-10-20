@@ -67,18 +67,19 @@ export function noteCenterX(
 }
 
 /**
- * Cumulative MID_CLEF_EXTRA for clef changes at local indices 1..slotIndex (inclusive).
+ * Cumulative mid-clef gap for clef changes at local indices 1..slotIndex (inclusive).
  * Slot 0 uses CLEF_INSET only (row-start clef).
  */
 export function midClefExtraBeforeSlot(
   notes: readonly { clef: string }[],
   slotIndex: number,
+  midClefGap: number = MID_CLEF_EXTRA,
 ): number {
   let extra = 0;
   const last = Math.min(slotIndex, notes.length - 1);
   for (let i = 1; i <= last; i++) {
     if (notes[i].clef !== notes[i - 1].clef) {
-      extra += MID_CLEF_EXTRA;
+      extra += midClefGap;
     }
   }
   return extra;
@@ -100,10 +101,55 @@ export function staffRowWidth(
   noteCount: number,
   clefInset: number = CLEF_INSET,
   midClefCount = 0,
+  midClefGap: number = MID_CLEF_EXTRA,
+  endPad: number = STAFF_ROW_END_PAD,
 ): number {
-  return (
-    clefInset + noteCount * NOTE_SLOT_WIDTH + midClefCount * MID_CLEF_EXTRA + STAFF_ROW_END_PAD
-  );
+  return clefInset + noteCount * NOTE_SLOT_WIDTH + midClefCount * midClefGap + endPad;
+}
+
+/**
+ * Stretch a row to `targetWidth` without changing note-to-note pitch:
+ * leftover goes into mid-clef gaps (split evenly), or trailing pad when the
+ * row has no mid-line clefs. Mid-clef gap never shrinks below MID_CLEF_EXTRA.
+ */
+export function equalizeRowToWidth(
+  midClefCount: number,
+  targetWidth: number,
+  noteCount: number,
+  clefInset: number = CLEF_INSET,
+): { midClefGap: number; endPad: number; width: number } {
+  const baseWidth = staffRowWidth(noteCount, clefInset, midClefCount);
+  const width = Math.max(baseWidth, targetWidth);
+  const leftover = width - baseWidth;
+  if (midClefCount <= 0) {
+    return {
+      midClefGap: MID_CLEF_EXTRA,
+      endPad: STAFF_ROW_END_PAD + leftover,
+      width,
+    };
+  }
+  const perClef = Math.floor(leftover / midClefCount);
+  const rem = leftover - perClef * midClefCount;
+  return {
+    midClefGap: MID_CLEF_EXTRA + perClef,
+    endPad: STAFF_ROW_END_PAD + rem,
+    width,
+  };
+}
+
+/** Max base staff-row width across rows that share the same slot capacity. */
+export function maxStaffRowWidth(
+  rows: readonly { notes: readonly { clef: string }[] }[],
+  slotCount: number,
+): number {
+  let max = staffRowWidth(slotCount, undefined, 0);
+  for (const row of rows) {
+    const w = staffRowWidth(slotCount, undefined, midClefChangeCount(row.notes));
+    if (w > max) {
+      max = w;
+    }
+  }
+  return max;
 }
 
 /**

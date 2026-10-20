@@ -12,13 +12,13 @@ import {
   NOTE_SLOT_WIDTH,
   STAFF_PAD_BOTTOM,
   STAFF_PAD_TOP,
+  equalizeRowToWidth,
   midClefChangeCount,
   midClefExtraBeforeSlot,
   middleLineYFromTop,
   noteCenterX,
   positionToY,
   staffRowHeight,
-  staffRowWidth,
 } from "./staffLayout";
 
 export type StaffViewProps = {
@@ -42,6 +42,11 @@ export type StaffViewProps = {
    * max(notes.length, slotCount) so short final rows keep the same 1:1 scale.
    */
   slotCount?: number;
+  /**
+   * Shared SVG width for all rows in a score (max base width). Shorter rows
+   * absorb leftover into mid-clef pads or trailing end pad.
+   */
+  targetWidth?: number;
   className?: string;
 };
 
@@ -54,13 +59,14 @@ export function StaffView({
   focusPeek = false,
   showCursor = true,
   slotCount,
+  targetWidth,
   className = "staff-view",
 }: StaffViewProps) {
   const midClefs = midClefChangeCount(notes);
   const slots = Math.max(notes.length, slotCount ?? notes.length);
   // Width/height are CSS pixels: viewBox user units map 1:1 so STAFF_SPACING
   // and clef fontSize never depend on note count or mid-clef density.
-  const width = staffRowWidth(slots, undefined, midClefs);
+  const { midClefGap, width } = equalizeRowToWidth(midClefs, targetWidth ?? 0, slots);
   const height = staffRowHeight();
   const midY = middleLineYFromTop();
   const labelY = height - STAFF_PAD_BOTTOM / 2;
@@ -72,7 +78,11 @@ export function StaffView({
       : -1;
   const playheadCx =
     playheadLocal >= 0
-      ? noteCenterX(playheadLocal, undefined, midClefExtraBeforeSlot(notes, playheadLocal))
+      ? noteCenterX(
+          playheadLocal,
+          undefined,
+          midClefExtraBeforeSlot(notes, playheadLocal, midClefGap),
+        )
       : 0;
 
   return (
@@ -106,12 +116,13 @@ export function StaffView({
       {notes.map((note, localIndex) => {
         const absoluteIndex = startIndex + localIndex;
         const vis = visibilityFor(absoluteIndex);
-        const midExtra = midClefExtraBeforeSlot(notes, localIndex);
+        const midExtra = midClefExtraBeforeSlot(notes, localIndex, midClefGap);
         const cx = noteCenterX(localIndex, undefined, midExtra);
         const cy = positionToY(note.position, midY);
         const showClef =
           vis.noteVisible && (vis.clefVisible || (localIndex === 0 && showRowStartClef));
-        // Row-start uses left inset; mid-row clef sits at the start of the reserved gap.
+        // Row-start uses left inset; mid-row clef sits MID_CLEF_EXTRA before the
+        // note slot so leftover equalization pads before the glyph, not after.
         const clefX = localIndex === 0 ? 6 : cx - slotHalf - MID_CLEF_EXTRA + 4;
 
         return (
