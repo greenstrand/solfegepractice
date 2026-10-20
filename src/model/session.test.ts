@@ -68,13 +68,13 @@ const transport = (partial: Partial<TransportDraft> = {}): TransportDraft => ({
 });
 
 describe("createSession", () => {
-  it("defaults to treble-only, mix off, difficulty 3, ledgerLines 3, bpm 80, revealN 1, reveal off, no answers", () => {
+  it("defaults to treble-only, mix off, difficulty 3, ledgerLines 3, bpm 60, revealN 1, reveal off, no answers", () => {
     const s = createSession();
     expect(s.settings.clefs).toEqual(["treble"]);
     expect(s.settings.mixClefs).toBe(false);
     expect(s.settings.difficulty).toBe(3);
     expect(s.settings.ledgerLines).toBe(3);
-    expect(s.settings.bpm).toBe(80);
+    expect(s.settings.bpm).toBe(60);
     expect(s.settings.revealEnabled).toBe(false);
     expect(s.settings.revealN).toBe(1);
     expect(s.settings.showAnswers).toBe(false);

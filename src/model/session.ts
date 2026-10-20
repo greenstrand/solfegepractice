@@ -59,7 +59,7 @@ export const DEFAULT_SETTINGS: DrillSettings = {
   mixClefs: false,
   difficulty: 3,
   ledgerLines: DEFAULT_LEDGER_LINES,
-  bpm: 80,
+  bpm: 60,
   revealN: 1,
   showAnswers: false,
   revealEnabled: false,
