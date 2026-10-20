@@ -1,0 +1,13 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+*.log
+coverage
+.vite
+node_modules/.tmp
+*.tsbuildinfo
+.env
+.env.*
+Docs/agent-runs/
