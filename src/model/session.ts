@@ -1,7 +1,13 @@
 /** Session transport and progressive-reveal visibility. Pure reducers; no DOM/rAF. */
 
 import type { Clef } from "./clefSolfegeMap";
-import { type DrillNote, type Rng, SEQUENCE_LENGTH, generateDrill } from "./generate";
+import {
+  type DrillNote,
+  type Rng,
+  SEQUENCE_LENGTH,
+  applyClefSchedule,
+  generateDrill,
+} from "./generate";
 import { DEFAULT_LEDGER_LINES, clampLedgerLines } from "./staffWindow";
 
 export type DrillSettings = {
@@ -73,15 +79,6 @@ function clampBpm(bpm: number): number {
   return Math.min(240, Math.max(20, Math.round(bpm)));
 }
 
-function sameClefSet(a: readonly Clef[], b: readonly Clef[]): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-  const sa = [...a].sort();
-  const sb = [...b].sort();
-  return sa.every((c, i) => c === sb[i]);
-}
-
 export function createSession(overrides?: Partial<DrillSettings>): Session {
   return {
     settings: { ...DEFAULT_SETTINGS, ...overrides },
@@ -118,7 +115,7 @@ export function generate(session: Session, rng: Rng): Session {
 /**
  * Apply live transport fields from draft without regenerating notes; start playing.
  * Resumes from frozen beatPhase; sets lastTickMs to nowMs.
- * Difficulty/mix clef set are not applied here (Generate); reveal is live via setters.
+ * Difficulty/ledger lines are not applied here (Generate); clefs/reveal are live via setters.
  */
 export function play(session: Session, draft: TransportDraft, nowMs: number): Session {
   return {
@@ -181,7 +178,7 @@ export function setRevealN(session: Session, revealN: number): Session {
 
 /**
  * Remap every note's clef to `clef` (positions unchanged); settings.clefs becomes [clef].
- * Used for single-clef (Mix off) selection.
+ * Used for single-clef (Mix off) selection. Playhead unchanged.
  */
 export function remapNotesToClef(session: Session, clef: Clef): Session {
   const notes = session.notes.map((n) => (n.clef === clef ? n : { ...n, clef }));
@@ -198,8 +195,32 @@ export function remapNotesToClef(session: Session, clef: Clef): Session {
 }
 
 /**
+ * Re-overlay a fresh Mix clef schedule on existing positions; sync clefs + mixClefs.
+ * Playhead and transport unchanged. No-op path when notes are empty (settings only).
+ */
+export function rescheduleClefs(session: Session, clefs: readonly Clef[], rng: Rng): Session {
+  if (clefs.length < 1) {
+    throw new Error("rescheduleClefs requires at least one clef");
+  }
+  const nextClefs = [...clefs];
+  if (session.notes.length === 0) {
+    return {
+      ...session,
+      settings: { ...session.settings, clefs: nextClefs, mixClefs: true },
+    };
+  }
+  const positions = session.notes.map((n) => n.position);
+  const notes = applyClefSchedule(positions, nextClefs, rng);
+  return {
+    ...session,
+    settings: { ...session.settings, clefs: nextClefs, mixClefs: true },
+    notes,
+  };
+}
+
+/**
  * True when draft generation settings differ from the applied session sequence settings
- * (difficulty, ledger lines, mix clef set). BPM, showAnswers, and reveal are live and ignored.
+ * (difficulty, ledger lines). Clefs/mix, BPM, showAnswers, and reveal are live and ignored.
  */
 export function isGenerateDirty(session: Session, draft: DrillSettings): boolean {
   const s = session.settings;
@@ -207,12 +228,6 @@ export function isGenerateDirty(session: Session, draft: DrillSettings): boolean
     return true;
   }
   if (clampLedgerLines(draft.ledgerLines) !== clampLedgerLines(s.ledgerLines)) {
-    return true;
-  }
-  if (draft.mixClefs !== s.mixClefs) {
-    return true;
-  }
-  if (!sameClefSet(draft.clefs, s.clefs)) {
     return true;
   }
   return false;

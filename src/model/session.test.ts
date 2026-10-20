@@ -11,6 +11,7 @@ import {
   pause,
   play,
   remapNotesToClef,
+  rescheduleClefs,
   setBpm,
   setRevealEnabled,
   setRevealN,
@@ -243,12 +244,14 @@ describe("remapNotesToClef", () => {
     const notes = [note(8, "treble"), note(12, "bass"), note(10, "alto")];
     let s = sessionWithNotes(notes, {
       settings: { clefs: ["treble", "bass", "alto"], mixClefs: true },
+      playhead: 2,
     });
     s = remapNotesToClef(s, "tenor");
     expect(s.notes.map((n) => n.position)).toEqual([8, 12, 10]);
     expect(s.notes.every((n) => n.clef === "tenor")).toBe(true);
     expect(s.settings.clefs).toEqual(["tenor"]);
     expect(s.settings.mixClefs).toBe(false);
+    expect(s.playhead).toBe(2);
   });
 
   it("returns same session when already single-clef matched", () => {
@@ -258,8 +261,30 @@ describe("remapNotesToClef", () => {
   });
 });
 
+describe("rescheduleClefs", () => {
+  it("keeps positions and playhead; overlays new clefs; syncs settings", () => {
+    const notes = Array.from({ length: 32 }, (_, i) =>
+      note(8 + (i % 5), i % 2 === 0 ? "treble" : "bass"),
+    );
+    const positions = notes.map((n) => n.position);
+    let s = sessionWithNotes(notes, {
+      playhead: 7,
+      beatPhase: 0.4,
+      settings: { clefs: ["treble", "bass"], mixClefs: true },
+    });
+    s = rescheduleClefs(s, ["alto", "tenor"], seededRng(55));
+    expect(s.notes.map((n) => n.position)).toEqual(positions);
+    expect(s.notes).toHaveLength(32);
+    expect(s.notes.every((n) => n.clef === "alto" || n.clef === "tenor")).toBe(true);
+    expect(s.settings.clefs).toEqual(["alto", "tenor"]);
+    expect(s.settings.mixClefs).toBe(true);
+    expect(s.playhead).toBe(7);
+    expect(s.beatPhase).toBe(0.4);
+  });
+});
+
 describe("isGenerateDirty", () => {
-  it("is dirty when mix clef set or ledgerLines differs without Generate; bpm/showAnswers/reveal ignored", () => {
+  it("is dirty for ledgerLines; ignores mix/clef set, bpm, showAnswers, reveal", () => {
     const notes = [note(10, "treble"), note(11, "bass")];
     const s = sessionWithNotes(notes, {
       settings: {
@@ -279,16 +304,10 @@ describe("isGenerateDirty", () => {
       showAnswers: true,
       revealEnabled: false,
       revealN: 4,
+      clefs: ["treble", "alto"],
+      mixClefs: false,
     };
     expect(isGenerateDirty(s, draftSameGen)).toBe(false);
-
-    const draftClefs: DrillSettings = {
-      ...s.settings,
-      clefs: ["treble", "alto"],
-    };
-    expect(isGenerateDirty(s, draftClefs)).toBe(true);
-    // Sequence clefs stay as generated until Generate (caller responsibility).
-    expect(s.notes.map((n) => n.clef)).toEqual(["treble", "bass"]);
 
     const draftLedgers: DrillSettings = {
       ...s.settings,

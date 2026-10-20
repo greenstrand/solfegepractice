@@ -49,7 +49,7 @@ export function ControlsView({
   toggleClef,
   className = "controls-view",
 }: ControlsViewProps) {
-  /** Difficulty / Mix / mix-clef set / ledger lines need Generate; locked while playing. */
+  /** Difficulty / ledger lines need Generate; Mix locked while playing. */
   const genLocked = playing;
   /** Single-clef (Mix off) remaps live — stay enabled mid-run. */
   const clefPickLocked = playing && draft.mixClefs;

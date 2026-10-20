@@ -18,6 +18,7 @@ import {
   pause,
   play,
   remapNotesToClef,
+  rescheduleClefs,
   stop,
   tick,
   visibilityFor,
@@ -188,6 +189,11 @@ export function useDrillController(): DrillController {
     (mix: boolean) => {
       if (mix) {
         setDraft((d) => (d.mixClefs ? d : { ...d, mixClefs: true }));
+        setSession((prev) =>
+          prev.settings.mixClefs
+            ? prev
+            : { ...prev, settings: { ...prev.settings, mixClefs: true } },
+        );
         return;
       }
       const sole = draft.clefs[0] ?? "treble";
@@ -204,19 +210,21 @@ export function useDrillController(): DrillController {
         setSession((prev) => remapNotesToClef(prev, clef));
         return;
       }
-      setDraft((d) => {
-        const has = d.clefs.includes(clef);
-        if (has) {
-          if (d.clefs.length <= 1) {
-            return d;
-          }
-          return { ...d, clefs: d.clefs.filter((c) => c !== clef) };
+      const has = draft.clefs.includes(clef);
+      if (has) {
+        if (draft.clefs.length <= 1) {
+          return;
         }
-        const next = CLEFS.filter((c) => d.clefs.includes(c) || c === clef);
-        return { ...d, clefs: next };
-      });
+        const nextClefs = draft.clefs.filter((c) => c !== clef);
+        setDraft((d) => ({ ...d, clefs: nextClefs }));
+        setSession((prev) => rescheduleClefs(prev, nextClefs, mathRng()));
+        return;
+      }
+      const nextClefs = CLEFS.filter((c) => draft.clefs.includes(c) || c === clef);
+      setDraft((d) => ({ ...d, clefs: nextClefs }));
+      setSession((prev) => rescheduleClefs(prev, nextClefs, mathRng()));
     },
-    [draft.mixClefs],
+    [draft.mixClefs, draft.clefs],
   );
 
   const generateDirty = useMemo(() => isGenerateDirty(session, draft), [session, draft]);
