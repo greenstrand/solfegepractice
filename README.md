@@ -4,7 +4,12 @@ Fixed-do clef solfege drill: paced staff practice with React and SVG notation.
 Clefs use the [Bravura](https://github.com/steinbergmedia/bravura) SMuFL font (SIL OFL; see `src/assets/fonts/OFL.txt`).
 
 Live site: [greenstrand.github.io/solfegepractice](https://greenstrand.github.io/solfegepractice/).
-Pushes to `main` deploy via GitHub Actions. Manual test: **Actions → Deploy static content to Pages → Run workflow** (can use a feature branch). Pages source must be **GitHub Actions**.
+
+Pushes to `main` deploy via GitHub Actions.
+
+Manual run: Actions -> Deploy static content to Pages -> Run workflow (feature branch OK for testing).
+
+Pages source must be GitHub Actions.
 
 ## Usage
 

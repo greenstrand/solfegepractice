@@ -3,7 +3,7 @@
 import type { Clef } from "../model/clefSolfegeMap";
 import { STAFF_SPACING } from "./staffLayout";
 
-/** U+E050 gClef (Bravura / SIL OFL; see public/fonts/OFL.txt). */
+/** U+E050 gClef (Bravura / SIL OFL; see src/assets/fonts/OFL.txt). */
 const G_CLEF_CHAR = "\uE050";
 /** U+E062 fClef */
 const F_CLEF_CHAR = "\uE062";
