@@ -2,7 +2,7 @@
 
 @font-face {
   font-family: "Bravura";
-  src: url("/fonts/Bravura.otf") format("opentype");
+  src: url("../assets/fonts/Bravura.otf") format("opentype");
   font-display: block;
 }
 
