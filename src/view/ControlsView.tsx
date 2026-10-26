@@ -1,5 +1,6 @@
 /** Draft settings + transport controls. Props-driven; no session math. */
 
+import { useState } from "react";
 import type { Clef } from "../model/clefSolfegeMap";
 import { CLEFS } from "../model/clefSolfegeMap";
 import type { DrillSettings } from "../model/session";
@@ -49,6 +50,7 @@ export function ControlsView({
   toggleClef,
   className = "controls-view",
 }: ControlsViewProps) {
+  const [expanded, setExpanded] = useState(true);
   /** Difficulty / ledger lines need Generate; Mix locked while playing. */
   const genLocked = playing;
   /** Single-clef (Mix off) remaps live - stay enabled mid-run. */
@@ -105,8 +107,7 @@ export function ControlsView({
         </label>
       </div>
 
-      <details className="controls-settings" open>
-        <summary className="controls-settings-summary">Settings</summary>
+      {expanded ? (
         <div className="controls-settings-body">
           <div className="controls-grid">
             <label className="control-field">
@@ -218,7 +219,20 @@ export function ControlsView({
             </div>
           </div>
         </div>
-      </details>
+      ) : null}
+
+      <button
+        type="button"
+        className="controls-expand-toggle"
+        aria-expanded={expanded}
+        aria-label={expanded ? "Collapse settings" : "Expand settings"}
+        onClick={() => setExpanded((open) => !open)}
+      >
+        <span
+          className={expanded ? "controls-expand-caret is-up" : "controls-expand-caret is-down"}
+          aria-hidden="true"
+        />
+      </button>
     </section>
   );
 }
