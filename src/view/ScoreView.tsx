@@ -71,10 +71,9 @@ export function ScoreView({
   }
 
   const equalized = maxStaffRowWidth(rows, perRow);
+  // Measured path stretches rows to containerWidth; notesPerRowProp/test path keeps equalized.
   const targetWidth =
-    containerWidth > 0 && notesPerRowProp === undefined
-      ? Math.min(equalized, containerWidth)
-      : equalized;
+    containerWidth > 0 && notesPerRowProp === undefined ? containerWidth : equalized;
 
   return (
     <div ref={containerRef} className={className} aria-label="Score">
