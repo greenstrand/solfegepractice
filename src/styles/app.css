@@ -73,7 +73,6 @@ body {
   gap: 1rem;
   min-height: 0;
   flex-shrink: 1;
-  max-height: 55dvh;
   overflow: hidden;
 }
 
@@ -89,11 +88,6 @@ body {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.55rem;
-}
-
-.controls-settings {
-  flex-shrink: 1;
-  min-height: 0;
 }
 
 .controls-settings-summary {
@@ -277,7 +271,8 @@ body {
   flex: 1 1 0;
   min-height: 0;
   min-width: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   scrollbar-gutter: stable;
 }
 

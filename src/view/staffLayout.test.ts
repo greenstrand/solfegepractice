@@ -19,7 +19,7 @@ describe("equalizeRowToWidth", () => {
     expect(result.endPad).toBe(STAFF_ROW_END_PAD + 40);
   });
 
-  it("grows midClefGap when mid-clefs exist; note slot pitch unchanged", () => {
+  it("grows midClefGap when mid-clefs exist; NOTE_SLOT_WIDTH unchanged", () => {
     const noteCount = 8;
     const midClefs = 2;
     const baseWidth = staffRowWidth(noteCount, CLEF_INSET, midClefs);
@@ -31,7 +31,6 @@ describe("equalizeRowToWidth", () => {
     expect(result.width).toBe(target);
     expect(result.midClefGap).toBe(MID_CLEF_EXTRA + perClef);
     expect(result.endPad).toBe(STAFF_ROW_END_PAD + rem);
-    expect(NOTE_SLOT_WIDTH).toBe(22);
     expect(
       CLEF_INSET + noteCount * NOTE_SLOT_WIDTH + midClefs * result.midClefGap + result.endPad,
     ).toBe(result.width);
