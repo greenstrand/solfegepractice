@@ -92,14 +92,8 @@ body {
 }
 
 .controls-settings {
-  min-height: 0;
   flex-shrink: 1;
-}
-
-.controls-settings[open] {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  min-height: 0;
 }
 
 .controls-settings-summary {
@@ -109,13 +103,11 @@ body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-muted);
-  flex-shrink: 0;
 }
 
 .controls-settings-body {
-  min-height: 0;
+  max-height: 30dvh;
   overflow: auto;
-  flex-shrink: 1;
   margin-top: 0.75rem;
 }
 
