@@ -62,6 +62,13 @@ body {
   color: var(--ink);
 }
 
+.load-error {
+  display: block;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+
 .controls-view {
   position: relative;
   background: var(--panel);

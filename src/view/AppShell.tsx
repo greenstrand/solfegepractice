@@ -21,7 +21,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 export function AppShell({ drill }: AppShellProps) {
-  const { settings, session, onPlay, onPause, setFocusPeek } = drill;
+  const { settings, loadError, session, onPlay, onPause, setFocusPeek } = drill;
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -70,6 +70,7 @@ export function AppShell({ drill }: AppShellProps) {
     <div className="app-shell">
       <header className="app-header">
         <h1 className="brand">Fixed Dojo</h1>
+        {loadError ? <output className="load-error">Could not load those settings</output> : null}
       </header>
 
       <ControlsView
