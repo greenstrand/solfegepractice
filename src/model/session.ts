@@ -4,18 +4,24 @@ import type { Clef } from "./clefSolfegeMap";
 import { type DrillNote, type Rng, SEQUENCE_LENGTH, generateDrill } from "./generate";
 import { DEFAULT_LEDGER_LINES, clampLedgerLines } from "./staffWindow";
 
-export type DrillSettings = {
+/** Fields that define which notes generateDrill produces. */
+export type GenerationParams = {
   clefs: Clef[];
   /** When false, clef UI is single-select. */
   mixClefs: boolean;
   difficulty: number;
   /** Max ledger lines above and below the staff (same count each side). */
   ledgerLines: number;
-  bpm: number;
+};
+
+/** Display helpers; live-patchable without regenerating. */
+export type ViewPrefs = {
+  revealEnabled: boolean;
   revealN: number;
   showAnswers: boolean;
-  revealEnabled: boolean;
 };
+
+export type DrillSettings = GenerationParams & ViewPrefs & { bpm: number };
 
 /** Transport fields applied on Play without regenerating notes. */
 export type TransportDraft = {
@@ -48,15 +54,23 @@ export type VisibilityOpts = {
   focusPeek?: boolean;
 };
 
-export const DEFAULT_SETTINGS: DrillSettings = {
+export const DEFAULT_GENERATION: GenerationParams = {
   clefs: ["treble"],
   mixClefs: false,
   difficulty: 3,
   ledgerLines: DEFAULT_LEDGER_LINES,
-  bpm: 60,
+};
+
+export const DEFAULT_VIEW: ViewPrefs = {
   revealN: 1,
   showAnswers: false,
   revealEnabled: false,
+};
+
+export const DEFAULT_SETTINGS: DrillSettings = {
+  ...DEFAULT_GENERATION,
+  ...DEFAULT_VIEW,
+  bpm: 60,
 };
 
 /** Shared reveal window max (URL bitpack uses 8 bits). */
@@ -97,14 +111,13 @@ export function createSession(overrides?: Partial<DrillSettings>): Session {
 /** Replace notes via generateDrill; reset playhead and transport phase. */
 export function generate(session: Session, rng: Rng): Session {
   const ledgerLines = clampLedgerLines(session.settings.ledgerLines);
-  const notes = generateDrill(
-    {
-      clefs: session.settings.clefs,
-      difficulty: session.settings.difficulty,
-      ledgerLines,
-    },
-    rng,
-  );
+  const gen: GenerationParams = {
+    clefs: session.settings.clefs,
+    mixClefs: session.settings.mixClefs,
+    difficulty: session.settings.difficulty,
+    ledgerLines,
+  };
+  const notes = generateDrill(gen, rng);
   return {
     ...session,
     settings: { ...session.settings, ledgerLines },
@@ -119,7 +132,7 @@ export function generate(session: Session, rng: Rng): Session {
 /**
  * Apply live transport fields from draft without regenerating notes; start playing.
  * Resumes from frozen beatPhase; sets lastTickMs to nowMs.
- * Full DrillSettings (clefs, reveal, difficulty, ledgers, etc.) apply via URL / generate.
+ * GenerationParams regenerate via URL sequenceKey / generate; view prefs via setViewPrefs.
  */
 export function play(session: Session, draft: TransportDraft, nowMs: number): Session {
   return {
@@ -143,6 +156,29 @@ export function setBpm(session: Session, bpm: number): Session {
   return {
     ...session,
     settings: { ...session.settings, bpm: next },
+  };
+}
+
+/** Patch view prefs on the live session immediately; does not stop or regenerate. */
+export function setViewPrefs(session: Session, prefs: ViewPrefs): Session {
+  const revealN = clampRevealN(prefs.revealN);
+  const revealEnabled = prefs.revealEnabled === true;
+  const showAnswers = prefs.showAnswers === true;
+  if (
+    session.settings.revealN === revealN &&
+    session.settings.revealEnabled === revealEnabled &&
+    session.settings.showAnswers === showAnswers
+  ) {
+    return session;
+  }
+  return {
+    ...session,
+    settings: {
+      ...session.settings,
+      revealN,
+      revealEnabled,
+      showAnswers,
+    },
   };
 }
 

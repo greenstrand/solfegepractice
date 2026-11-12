@@ -11,6 +11,7 @@ import {
   pause,
   play,
   setBpm,
+  setViewPrefs,
   stop,
   tick,
   visibilityFor,
@@ -150,6 +151,39 @@ describe("setBpm live apply", () => {
   it("returns same session when bpm unchanged after clamp", () => {
     const s = sessionWithNotes([note(10, "treble")], { settings: { bpm: 80 } });
     expect(setBpm(s, 80)).toBe(s);
+  });
+});
+
+describe("setViewPrefs live apply", () => {
+  it("updates reveal/showAnswers without stopping, regenerating, or moving playhead", () => {
+    const notes = [note(8, "treble"), note(9, "treble")];
+    let s = sessionWithNotes(notes, {
+      playhead: 1,
+      playing: true,
+      beatPhase: 0.25,
+      lastTickMs: 500,
+      settings: {
+        revealEnabled: false,
+        revealN: 1,
+        showAnswers: false,
+      },
+    });
+    s = setViewPrefs(s, { revealEnabled: true, revealN: 3, showAnswers: true });
+    expect(s.settings.revealEnabled).toBe(true);
+    expect(s.settings.revealN).toBe(3);
+    expect(s.settings.showAnswers).toBe(true);
+    expect(s.notes).toEqual(notes);
+    expect(s.playhead).toBe(1);
+    expect(s.playing).toBe(true);
+    expect(s.beatPhase).toBe(0.25);
+    expect(s.lastTickMs).toBe(500);
+  });
+
+  it("returns same session when view prefs unchanged after clamp", () => {
+    const s = sessionWithNotes([note(10, "treble")], {
+      settings: { revealEnabled: true, revealN: 2, showAnswers: true },
+    });
+    expect(setViewPrefs(s, { revealEnabled: true, revealN: 2, showAnswers: true })).toBe(s);
   });
 });
 
