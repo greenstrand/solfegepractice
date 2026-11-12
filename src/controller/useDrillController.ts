@@ -20,7 +20,7 @@ import {
   tick,
   visibilityFor,
 } from "../model/session";
-import { sequenceKey } from "../model/settingsSearch";
+import { generationKey } from "../model/settingsSearch";
 import { clampLedgerLines } from "../model/staffWindow";
 import { useSettingsSearch } from "./useSettingsSearch";
 
@@ -53,7 +53,7 @@ export function useDrillController(): DrillController {
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
-  const seqKey = sequenceKey(settings);
+  const genKey = generationKey(settings);
   const bpm = settings.bpm;
   const revealEnabled = settings.revealEnabled;
   const revealN = settings.revealN;
@@ -61,11 +61,11 @@ export function useDrillController(): DrillController {
 
   // GenerationParams identity: stop + generate (includes first paint).
   useEffect(() => {
-    void seqKey;
+    void genKey;
     setSession((prev) =>
       generate({ ...stop(prev), settings: { ...settingsRef.current } }, mathRng()),
     );
-  }, [seqKey]);
+  }, [genKey]);
 
   // BPM only: live tempo; do not stop or regenerate.
   useEffect(() => {
@@ -97,17 +97,7 @@ export function useDrillController(): DrillController {
 
   const onPlay = useCallback(() => {
     const nowMs = performance.now();
-    const s = settingsRef.current;
-    setSession((prev) =>
-      play(
-        prev,
-        {
-          bpm: s.bpm,
-          showAnswers: s.showAnswers,
-        },
-        nowMs,
-      ),
-    );
+    setSession((prev) => play(prev, nowMs));
   }, []);
 
   const onPause = useCallback(() => {

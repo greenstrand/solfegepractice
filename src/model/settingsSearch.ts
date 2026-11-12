@@ -70,20 +70,20 @@ export function serializeSearch(settings: DrillSettings): string {
  * GenerationParams identity only; stable across bpm and view-pref changes.
  * Not the on-wire `s` value (that still packs view bits via packSettingsBits).
  */
-export function sequenceKey(settings: DrillSettings): string {
+export function generationKey(settings: DrillSettings): string {
   return packGenerationBits(settings);
 }
 
 /**
- * True when next settings keep the same sequenceKey as prevSearch but differ in
+ * True when next settings keep the same generationKey as prevSearch but differ in
  * serializeSearch (bpm-only, view-only, or both).
  */
-export function isNonSequenceSearchChange(
+export function isNonGenerationSearchChange(
   prevSearch: string,
   nextSettings: DrillSettings,
 ): boolean {
   const prevSettings = parseSearch(prevSearch).settings;
-  if (sequenceKey(prevSettings) !== sequenceKey(nextSettings)) {
+  if (generationKey(prevSettings) !== generationKey(nextSettings)) {
     return false;
   }
   return serializeSearch(prevSettings) !== serializeSearch(nextSettings);
@@ -124,8 +124,8 @@ function parseBpmParam(raw: string | null): number {
   return clampBpm(n);
 }
 
-/** Stable GenerationParams key (not on-wire `s`). */
-function packGenerationBits(settings: DrillSettings): string {
+/** Pack GenerationParams into the high bit fields of the 32-bit layout. */
+function generationBits(settings: DrillSettings): number {
   const normalized = normalizeSettings(settings);
   let clefsMask = 0;
   for (let i = 0; i < CLEFS.length; i++) {
@@ -141,7 +141,10 @@ function packGenerationBits(settings: DrillSettings): string {
   bits |= (clefsMask & 0xf) << 23;
   bits |= (normalized.difficulty & 0xf) << 19;
   bits |= (normalized.ledgerLines & 0x7) << 16;
+  return bits;
+}
 
+function bitsToBase64Url(bits: number): string {
   const bytes = new Uint8Array([
     (bits >>> 24) & 0xff,
     (bits >>> 16) & 0xff,
@@ -151,35 +154,20 @@ function packGenerationBits(settings: DrillSettings): string {
   return encodeBase64Url(bytes);
 }
 
+/** Stable GenerationParams key (not on-wire `s`). */
+function packGenerationBits(settings: DrillSettings): string {
+  return bitsToBase64Url(generationBits(settings));
+}
+
 /** Pack non-bpm fields (gen + view) to base64url (no padding). On-wire `s` layout. */
 function packSettingsBits(settings: DrillSettings): string {
   const normalized = normalizeSettings(settings);
-  let clefsMask = 0;
-  for (let i = 0; i < CLEFS.length; i++) {
-    const clef = CLEFS[i];
-    if (clef !== undefined && normalized.clefs.includes(clef)) {
-      clefsMask |= 1 << i;
-    }
-  }
-
-  let bits = 0;
-  bits |= (PACK_VERSION & 0xf) << 28;
-  bits |= (normalized.mixClefs ? 1 : 0) << 27;
-  bits |= (clefsMask & 0xf) << 23;
-  bits |= (normalized.difficulty & 0xf) << 19;
-  bits |= (normalized.ledgerLines & 0x7) << 16;
+  let bits = generationBits(normalized);
   bits |= (normalized.revealEnabled ? 1 : 0) << 15;
   bits |= (normalized.showAnswers ? 1 : 0) << 14;
   bits |= (normalized.revealN & 0xff) << 6;
   // reserved 6 bits stay 0
-
-  const bytes = new Uint8Array([
-    (bits >>> 24) & 0xff,
-    (bits >>> 16) & 0xff,
-    (bits >>> 8) & 0xff,
-    bits & 0xff,
-  ]);
-  return encodeBase64Url(bytes);
+  return bitsToBase64Url(bits);
 }
 
 /** Unpack s; null if corrupt or unknown version. Reserved bits ignored on read. */

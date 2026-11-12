@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DrillSettings } from "../model/session";
-import { isNonSequenceSearchChange, parseSearch, serializeSearch } from "../model/settingsSearch";
+import { isNonGenerationSearchChange, parseSearch, serializeSearch } from "../model/settingsSearch";
 
 export type SettingsSearchApi = {
   settings: DrillSettings;
@@ -82,8 +82,8 @@ export function useSettingsSearch(): SettingsSearchApi {
       setLoadError(false);
       return;
     }
-    // Bare defaults and non-sequence (bpm/view): overwrite history. Gen changes: push.
-    if (next === "" || isNonSequenceSearchChange(prev, nextSettings)) {
+    // Bare defaults and non-generation (bpm/view): overwrite history. Gen changes: push.
+    if (next === "" || isNonGenerationSearchChange(prev, nextSettings)) {
       window.history.replaceState(null, "", historyUrl(next));
     } else {
       window.history.pushState(null, "", historyUrl(next));

@@ -5,7 +5,6 @@ import { seededRng } from "./rng";
 import {
   type DrillSettings,
   type Session,
-  type TransportDraft,
   createSession,
   generate,
   pause,
@@ -42,12 +41,6 @@ function sessionWithNotes(
     notes,
   };
 }
-
-const transport = (partial: Partial<TransportDraft> = {}): TransportDraft => ({
-  bpm: 80,
-  showAnswers: false,
-  ...partial,
-});
 
 describe("createSession", () => {
   it("defaults to treble-only, mix off, difficulty 3, ledgerLines 3, bpm 60, revealN 1, reveal off, no answers", () => {
@@ -86,9 +79,14 @@ describe("generate", () => {
 
 describe("play / tick BPM advance", () => {
   it("advances playhead by floor(elapsed beats) at bpm (1 note per beat)", () => {
-    let s = sessionWithNotes(Array.from({ length: 16 }, (_, i) => note(10 + (i % 3), "treble")));
+    let s = sessionWithNotes(
+      Array.from({ length: 16 }, (_, i) => note(10 + (i % 3), "treble")),
+      {
+        settings: { bpm: 60 },
+      },
+    );
     // bpm 60 => 1000ms per beat
-    s = play(s, transport({ bpm: 60 }), 0);
+    s = play(s, 0);
     expect(s.playing).toBe(true);
     expect(s.playhead).toBe(0);
 
@@ -100,7 +98,7 @@ describe("play / tick BPM advance", () => {
     expect(s.playhead).toBe(3);
   });
 
-  it("play applies bpm/showAnswers without regenerating notes or changing reveal", () => {
+  it("play starts transport without changing settings or notes", () => {
     const notes = [note(8, "treble"), note(9, "treble"), note(10, "bass")];
     let s = sessionWithNotes(notes, {
       settings: {
@@ -112,10 +110,10 @@ describe("play / tick BPM advance", () => {
         clefs: ["treble", "bass"],
       },
     });
-    s = play(s, transport({ bpm: 120, showAnswers: true }), 100);
+    s = play(s, 100);
     expect(s.notes).toEqual(notes);
-    expect(s.settings.bpm).toBe(120);
-    expect(s.settings.showAnswers).toBe(true);
+    expect(s.settings.bpm).toBe(80);
+    expect(s.settings.showAnswers).toBe(false);
     expect(s.settings.revealN).toBe(0);
     expect(s.settings.revealEnabled).toBe(false);
     expect(s.settings.difficulty).toBe(3);
@@ -189,9 +187,14 @@ describe("setViewPrefs live apply", () => {
 
 describe("pause freezes phase", () => {
   it("pause freezes fractional beat; resume continues from same phase", () => {
-    let s = sessionWithNotes(Array.from({ length: 16 }, () => note(10, "treble")));
+    let s = sessionWithNotes(
+      Array.from({ length: 16 }, () => note(10, "treble")),
+      {
+        settings: { bpm: 60 },
+      },
+    );
     // bpm 60 => 1000ms/beat
-    s = play(s, transport({ bpm: 60 }), 0);
+    s = play(s, 0);
     // 500ms => 0.5 beat, playhead still 0
     s = tick(s, 500);
     expect(s.playhead).toBe(0);
@@ -208,7 +211,7 @@ describe("pause freezes phase", () => {
     expect(s.beatPhase).toBeCloseTo(0.5, 5);
 
     // Resume: another 500ms completes 1 beat
-    s = play(s, transport({ bpm: 60 }), 10_000);
+    s = play(s, 10_000);
     s = tick(s, 10_500);
     expect(s.playhead).toBe(1);
     expect(s.beatPhase).toBeCloseTo(0, 5);
@@ -328,8 +331,8 @@ describe("end stops", () => {
     const notes = Array.from({ length: SEQUENCE_LENGTH }, (_, i) =>
       note(10 + (i % 2 === 0 ? 0 : 1), "treble"),
     );
-    let s = sessionWithNotes(notes, { playhead: SEQUENCE_LENGTH - 2 });
-    s = play(s, transport({ bpm: 60 }), 0);
+    let s = sessionWithNotes(notes, { playhead: SEQUENCE_LENGTH - 2, settings: { bpm: 60 } });
+    s = play(s, 0);
     // 3 beats from index 254 -> would reach 257, clamp to done
     s = tick(s, 3000);
     expect(s.playing).toBe(false);

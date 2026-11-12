@@ -23,12 +23,6 @@ export type ViewPrefs = {
 
 export type DrillSettings = GenerationParams & ViewPrefs & { bpm: number };
 
-/** Transport fields applied on Play without regenerating notes. */
-export type TransportDraft = {
-  bpm: number;
-  showAnswers: boolean;
-};
-
 /**
  * Playhead is 0..255 while notes are in progress.
  * On advancing past the last note, playing becomes false and playhead = SEQUENCE_LENGTH (256).
@@ -130,18 +124,12 @@ export function generate(session: Session, rng: Rng): Session {
 }
 
 /**
- * Apply live transport fields from draft without regenerating notes; start playing.
- * Resumes from frozen beatPhase; sets lastTickMs to nowMs.
- * GenerationParams regenerate via URL sequenceKey / generate; view prefs via setViewPrefs.
+ * Start or resume playback: sets playing and lastTickMs to nowMs.
+ * Keeps frozen beatPhase so resume continues from the same fractional beat.
  */
-export function play(session: Session, draft: TransportDraft, nowMs: number): Session {
+export function play(session: Session, nowMs: number): Session {
   return {
     ...session,
-    settings: {
-      ...session.settings,
-      bpm: clampBpm(draft.bpm),
-      showAnswers: draft.showAnswers,
-    },
     playing: true,
     lastTickMs: nowMs,
   };

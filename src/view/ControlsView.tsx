@@ -66,10 +66,8 @@ export function ControlsView({
     if (playing) setSettingsOpen(false);
   }, [playing]);
 
-  /** Difficulty / ledger lines / mix locked while playing. */
+  /** Difficulty / clefs / ledger lines locked while playing. */
   const lockedWhilePlaying = playing;
-  /** Mix-mode clef picks locked while playing; single-clef pick stays enabled. */
-  const clefPickLocked = playing && settings.mixClefs;
   const clefInputType = settings.mixClefs ? "checkbox" : "radio";
 
   const displayBpm = bpmDrag ?? settings.bpm;
@@ -244,7 +242,7 @@ export function ControlsView({
                     type={clefInputType}
                     name={settings.mixClefs ? undefined : "clef-pick"}
                     checked={settings.clefs.includes(clef)}
-                    disabled={clefPickLocked}
+                    disabled={lockedWhilePlaying}
                     onChange={() => toggleClef(clef)}
                   />
                   {CLEF_LABELS[clef]}

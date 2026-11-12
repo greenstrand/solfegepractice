@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { DrillSettings } from "./session";
 import { DEFAULT_SETTINGS, MAX_REVEAL_N, clampRevealN } from "./session";
 import {
-  isNonSequenceSearchChange,
+  generationKey,
+  isNonGenerationSearchChange,
   parseSearch,
-  sequenceKey,
   serializeSearch,
 } from "./settingsSearch";
 
-/** Non-default arrange values used across codec tests. */
+/** Fixture: non-default gen + view + bpm for codec round-trips. */
 const SAMPLE: DrillSettings = {
   clefs: ["bass", "alto"],
   mixClefs: true,
@@ -115,37 +115,39 @@ describe("serializeSearch / parseSearch", () => {
   });
 });
 
-describe("sequenceKey / isNonSequenceSearchChange", () => {
-  it("keeps sequenceKey stable across bpm and view-pref-only changes", () => {
-    const a = sequenceKey(SAMPLE);
-    expect(sequenceKey({ ...SAMPLE, bpm: 40 })).toBe(a);
-    expect(sequenceKey({ ...SAMPLE, bpm: DEFAULT_SETTINGS.bpm })).toBe(a);
-    expect(sequenceKey({ ...SAMPLE, revealEnabled: false })).toBe(a);
-    expect(sequenceKey({ ...SAMPLE, showAnswers: false })).toBe(a);
-    expect(sequenceKey({ ...SAMPLE, revealN: 9 })).toBe(a);
-    expect(a).toBe(sequenceKey(parseSearch(serializeSearch(SAMPLE)).settings));
+describe("generationKey / isNonGenerationSearchChange", () => {
+  it("keeps generationKey stable across bpm and view-pref-only changes", () => {
+    const a = generationKey(SAMPLE);
+    expect(generationKey({ ...SAMPLE, bpm: 40 })).toBe(a);
+    expect(generationKey({ ...SAMPLE, bpm: DEFAULT_SETTINGS.bpm })).toBe(a);
+    expect(generationKey({ ...SAMPLE, revealEnabled: false })).toBe(a);
+    expect(generationKey({ ...SAMPLE, showAnswers: false })).toBe(a);
+    expect(generationKey({ ...SAMPLE, revealN: 9 })).toBe(a);
+    expect(a).toBe(generationKey(parseSearch(serializeSearch(SAMPLE)).settings));
   });
 
-  it("changes sequenceKey when generation params change", () => {
-    expect(sequenceKey({ ...SAMPLE, difficulty: 3 })).not.toBe(sequenceKey(SAMPLE));
-    expect(sequenceKey({ ...SAMPLE, clefs: ["treble"] })).not.toBe(sequenceKey(SAMPLE));
-    expect(sequenceKey({ ...SAMPLE, ledgerLines: 4 })).not.toBe(sequenceKey(SAMPLE));
-    expect(sequenceKey({ ...SAMPLE, mixClefs: false, clefs: ["bass"] })).not.toBe(
-      sequenceKey(SAMPLE),
+  it("changes generationKey when generation params change", () => {
+    expect(generationKey({ ...SAMPLE, difficulty: 3 })).not.toBe(generationKey(SAMPLE));
+    expect(generationKey({ ...SAMPLE, clefs: ["treble"] })).not.toBe(generationKey(SAMPLE));
+    expect(generationKey({ ...SAMPLE, ledgerLines: 4 })).not.toBe(generationKey(SAMPLE));
+    expect(generationKey({ ...SAMPLE, mixClefs: false, clefs: ["bass"] })).not.toBe(
+      generationKey(SAMPLE),
     );
   });
 
-  it("detects non-sequence (bpm/view) vs generation changes against prev search", () => {
+  it("detects non-generation (bpm/view) vs generation changes against prev search", () => {
     const prev = serializeSearch(SAMPLE);
-    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, bpm: 140 })).toBe(true);
-    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, showAnswers: false })).toBe(true);
-    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, revealEnabled: false })).toBe(true);
-    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, revealN: 9 })).toBe(true);
-    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, bpm: 140, showAnswers: false })).toBe(true);
-    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, bpm: SAMPLE.bpm })).toBe(false);
-    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, difficulty: 2 })).toBe(false);
-    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, difficulty: 2, bpm: 140 })).toBe(false);
-    expect(isNonSequenceSearchChange("?bpm=96", { ...DEFAULT_SETTINGS, bpm: 120 })).toBe(true);
+    expect(isNonGenerationSearchChange(prev, { ...SAMPLE, bpm: 140 })).toBe(true);
+    expect(isNonGenerationSearchChange(prev, { ...SAMPLE, showAnswers: false })).toBe(true);
+    expect(isNonGenerationSearchChange(prev, { ...SAMPLE, revealEnabled: false })).toBe(true);
+    expect(isNonGenerationSearchChange(prev, { ...SAMPLE, revealN: 9 })).toBe(true);
+    expect(isNonGenerationSearchChange(prev, { ...SAMPLE, bpm: 140, showAnswers: false })).toBe(
+      true,
+    );
+    expect(isNonGenerationSearchChange(prev, { ...SAMPLE, bpm: SAMPLE.bpm })).toBe(false);
+    expect(isNonGenerationSearchChange(prev, { ...SAMPLE, difficulty: 2 })).toBe(false);
+    expect(isNonGenerationSearchChange(prev, { ...SAMPLE, difficulty: 2, bpm: 140 })).toBe(false);
+    expect(isNonGenerationSearchChange("?bpm=96", { ...DEFAULT_SETTINGS, bpm: 120 })).toBe(true);
   });
 
   it("round-trips still include view bits in s", () => {
@@ -163,8 +165,8 @@ describe("sequenceKey / isNonSequenceSearchChange", () => {
       revealN: 1,
     });
     expect(viewOff).not.toBe(withView);
-    expect(sequenceKey(SAMPLE)).toBe(
-      sequenceKey({
+    expect(generationKey(SAMPLE)).toBe(
+      generationKey({
         ...SAMPLE,
         revealEnabled: false,
         showAnswers: false,
