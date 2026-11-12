@@ -1,6 +1,10 @@
 /** Draft settings + transport controls. Props-driven; no session math. */
 
 import { useState } from "react";
+import generateIcon from "../assets/icons/generate.svg";
+import pauseIcon from "../assets/icons/pause.svg";
+import playIcon from "../assets/icons/play.svg";
+import stopIcon from "../assets/icons/stop.svg";
 import type { Clef } from "../model/clefSolfegeMap";
 import { CLEFS } from "../model/clefSolfegeMap";
 import type { DrillSettings } from "../model/session";
@@ -61,8 +65,14 @@ export function ControlsView({
     <section className={className} aria-label="Drill controls">
       <div className="controls-pinned">
         <div className="controls-transport">
-          <button type="button" className="btn btn-primary" onClick={onGenerate}>
-            Generate
+          <button
+            type="button"
+            className="btn btn-primary"
+            aria-label="Generate"
+            onClick={onGenerate}
+          >
+            <img className="btn-icon" src={generateIcon} alt="" aria-hidden="true" />
+            <span className="btn-label">Generate</span>
           </button>
           {generateDirty && !playing ? (
             <span className="controls-generate-hint" aria-live="polite">
@@ -70,16 +80,19 @@ export function ControlsView({
             </span>
           ) : null}
           {playing ? (
-            <button type="button" className="btn" onClick={onPause}>
-              Pause
+            <button type="button" className="btn" aria-label="Pause" onClick={onPause}>
+              <img className="btn-icon" src={pauseIcon} alt="" aria-hidden="true" />
+              <span className="btn-label">Pause</span>
             </button>
           ) : (
-            <button type="button" className="btn" onClick={onPlay}>
-              Play
+            <button type="button" className="btn" aria-label="Play" onClick={onPlay}>
+              <img className="btn-icon" src={playIcon} alt="" aria-hidden="true" />
+              <span className="btn-label">Play</span>
             </button>
           )}
-          <button type="button" className="btn" onClick={onStop}>
-            Stop
+          <button type="button" className="btn" aria-label="Stop" onClick={onStop}>
+            <img className="btn-icon" src={stopIcon} alt="" aria-hidden="true" />
+            <span className="btn-label">Stop</span>
           </button>
         </div>
 
