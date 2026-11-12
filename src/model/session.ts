@@ -65,11 +65,14 @@ export const DEFAULT_SETTINGS: DrillSettings = {
   revealEnabled: false,
 };
 
+/** Shared reveal window max (URL bitpack uses 8 bits). */
+export const MAX_REVEAL_N = 255;
+
 export function clampRevealN(n: number): number {
   if (!Number.isFinite(n)) {
     return DEFAULT_SETTINGS.revealN;
   }
-  return Math.max(0, Math.round(n));
+  return Math.min(MAX_REVEAL_N, Math.max(0, Math.round(n)));
 }
 
 export function clampBpm(bpm: number): number {
