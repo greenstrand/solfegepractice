@@ -1,6 +1,6 @@
 /** History adapter: React search string <-> location.search via push/replace/popstate. */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DrillSettings } from "../model/session";
 import { parseSearch, serializeSearch } from "../model/settingsSearch";
 
@@ -44,11 +44,14 @@ export function useSettingsSearch(): SettingsSearchApi {
     }
     return parseSearch(window.location.search).loadError;
   });
+  /** Last written search; dedupes rapid duplicate commits before React state catches up. */
+  const lastWrittenSearchRef = useRef(search);
 
   useEffect(() => {
     const recovered = recoverFromSearch(window.location.search);
     if (recovered.shouldReplace) {
       window.history.replaceState(null, "", historyUrl(recovered.search));
+      lastWrittenSearchRef.current = recovered.search;
       setSearch(recovered.search);
     }
     if (recovered.loadError) {
@@ -62,6 +65,7 @@ export function useSettingsSearch(): SettingsSearchApi {
       if (recovered.shouldReplace) {
         window.history.replaceState(null, "", historyUrl(recovered.search));
       }
+      lastWrittenSearchRef.current = recovered.search;
       setSearch(recovered.search);
       setLoadError(recovered.loadError);
     };
@@ -71,23 +75,21 @@ export function useSettingsSearch(): SettingsSearchApi {
     };
   }, []);
 
-  const commit = useCallback(
-    (nextSettings: DrillSettings) => {
-      const next = serializeSearch(nextSettings);
-      if (next === search) {
-        setLoadError(false);
-        return;
-      }
-      if (next === "") {
-        window.history.replaceState(null, "", historyUrl(""));
-      } else {
-        window.history.pushState(null, "", historyUrl(next));
-      }
-      setSearch(next);
+  const commit = useCallback((nextSettings: DrillSettings) => {
+    const next = serializeSearch(nextSettings);
+    if (next === lastWrittenSearchRef.current) {
       setLoadError(false);
-    },
-    [search],
-  );
+      return;
+    }
+    if (next === "") {
+      window.history.replaceState(null, "", historyUrl(""));
+    } else {
+      window.history.pushState(null, "", historyUrl(next));
+    }
+    lastWrittenSearchRef.current = next;
+    setSearch(next);
+    setLoadError(false);
+  }, []);
 
   const settings = useMemo(() => parseSearch(search).settings, [search]);
 

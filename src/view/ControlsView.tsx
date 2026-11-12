@@ -1,6 +1,6 @@
 /** Settings + transport controls. Props-driven; no session math. */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import generateIcon from "../assets/icons/generate.svg";
 import pauseIcon from "../assets/icons/pause.svg";
 import playIcon from "../assets/icons/play.svg";
@@ -58,6 +58,9 @@ export function ControlsView({
   const [bpmDrag, setBpmDrag] = useState<number | null>(null);
   const [difficultyDrag, setDifficultyDrag] = useState<number | null>(null);
   const [ledgerDrag, setLedgerDrag] = useState<number | null>(null);
+  const bpmDragRef = useRef<number | null>(null);
+  const difficultyDragRef = useRef<number | null>(null);
+  const ledgerDragRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (playing) setSettingsOpen(false);
@@ -73,34 +76,56 @@ export function ControlsView({
   const displayDifficulty = difficultyDrag ?? settings.difficulty;
   const displayLedger = ledgerDrag ?? settings.ledgerLines;
 
+  const writeBpmDrag = (next: number | null) => {
+    bpmDragRef.current = next;
+    setBpmDrag(next);
+  };
+
+  const writeDifficultyDrag = (next: number | null) => {
+    difficultyDragRef.current = next;
+    setDifficultyDrag(next);
+  };
+
+  const writeLedgerDrag = (next: number | null) => {
+    ledgerDragRef.current = next;
+    setLedgerDrag(next);
+  };
+
+  /** Clears drag sync via ref so pointer-up then blur cannot double-commit. */
   const releaseBpm = () => {
-    if (bpmDrag === null) {
+    const drag = bpmDragRef.current;
+    if (drag === null) {
       return;
     }
-    if (bpmDrag !== settings.bpm) {
-      commit({ ...settings, bpm: bpmDrag });
-    }
+    bpmDragRef.current = null;
     setBpmDrag(null);
+    if (drag !== settings.bpm) {
+      commit({ ...settings, bpm: drag });
+    }
   };
 
   const releaseDifficulty = () => {
-    if (difficultyDrag === null) {
+    const drag = difficultyDragRef.current;
+    if (drag === null) {
       return;
     }
-    if (difficultyDrag !== settings.difficulty) {
-      setDifficulty(difficultyDrag);
-    }
+    difficultyDragRef.current = null;
     setDifficultyDrag(null);
+    if (drag !== settings.difficulty) {
+      setDifficulty(drag);
+    }
   };
 
   const releaseLedger = () => {
-    if (ledgerDrag === null) {
+    const drag = ledgerDragRef.current;
+    if (drag === null) {
       return;
     }
-    if (ledgerDrag !== settings.ledgerLines) {
-      setLedgerLines(ledgerDrag);
-    }
+    ledgerDragRef.current = null;
     setLedgerDrag(null);
+    if (drag !== settings.ledgerLines) {
+      setLedgerLines(drag);
+    }
   };
 
   return (
@@ -144,12 +169,12 @@ export function ControlsView({
               value={displayBpm}
               onChange={(e) => {
                 const next = Number(e.target.value);
-                setBpmDrag(next);
+                writeBpmDrag(next);
                 setBpm(next);
               }}
               onPointerUp={releaseBpm}
-              onMouseUp={releaseBpm}
-              onTouchEnd={releaseBpm}
+              onPointerCancel={releaseBpm}
+              onBlur={releaseBpm}
               aria-label="BPM slider"
             />
             <input
@@ -159,7 +184,7 @@ export function ControlsView({
               value={displayBpm}
               onChange={(e) => {
                 const next = Number(e.target.value);
-                setBpmDrag(null);
+                writeBpmDrag(null);
                 commit({ ...settings, bpm: next });
               }}
               aria-label="BPM"
@@ -180,10 +205,10 @@ export function ControlsView({
                 step={1}
                 value={displayDifficulty}
                 disabled={genLocked}
-                onChange={(e) => setDifficultyDrag(Number(e.target.value))}
+                onChange={(e) => writeDifficultyDrag(Number(e.target.value))}
                 onPointerUp={releaseDifficulty}
-                onMouseUp={releaseDifficulty}
-                onTouchEnd={releaseDifficulty}
+                onPointerCancel={releaseDifficulty}
+                onBlur={releaseDifficulty}
                 aria-label="Difficulty slider"
               />
               <input
@@ -193,7 +218,7 @@ export function ControlsView({
                 value={displayDifficulty}
                 disabled={genLocked}
                 onChange={(e) => {
-                  setDifficultyDrag(null);
+                  writeDifficultyDrag(null);
                   setDifficulty(Number(e.target.value));
                 }}
                 aria-label="Difficulty"
@@ -268,10 +293,10 @@ export function ControlsView({
                   step={1}
                   value={displayLedger}
                   disabled={genLocked}
-                  onChange={(e) => setLedgerDrag(Number(e.target.value))}
+                  onChange={(e) => writeLedgerDrag(Number(e.target.value))}
                   onPointerUp={releaseLedger}
-                  onMouseUp={releaseLedger}
-                  onTouchEnd={releaseLedger}
+                  onPointerCancel={releaseLedger}
+                  onBlur={releaseLedger}
                   aria-label="Ledger lines slider"
                 />
                 <input
@@ -281,7 +306,7 @@ export function ControlsView({
                   value={displayLedger}
                   disabled={genLocked}
                   onChange={(e) => {
-                    setLedgerDrag(null);
+                    writeLedgerDrag(null);
                     setLedgerLines(Number(e.target.value));
                   }}
                   aria-label="Ledger lines"
