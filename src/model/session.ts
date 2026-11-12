@@ -1,18 +1,12 @@
 /** Session transport and progressive-reveal visibility. Pure reducers; no DOM/rAF. */
 
-import { CLEFS, type Clef } from "./clefSolfegeMap";
-import {
-  type DrillNote,
-  type Rng,
-  SEQUENCE_LENGTH,
-  applyClefSchedule,
-  generateDrill,
-} from "./generate";
+import type { Clef } from "./clefSolfegeMap";
+import { type DrillNote, type Rng, SEQUENCE_LENGTH, generateDrill } from "./generate";
 import { DEFAULT_LEDGER_LINES, clampLedgerLines } from "./staffWindow";
 
 export type DrillSettings = {
   clefs: Clef[];
-  /** When false, clef UI is single-select and remaps the current sequence. */
+  /** When false, clef UI is single-select. */
   mixClefs: boolean;
   difficulty: number;
   /** Max ledger lines above and below the staff (same count each side). */
@@ -125,7 +119,7 @@ export function generate(session: Session, rng: Rng): Session {
 /**
  * Apply live transport fields from draft without regenerating notes; start playing.
  * Resumes from frozen beatPhase; sets lastTickMs to nowMs.
- * Difficulty/ledger lines are not applied here (Generate); clefs/reveal are live via setters.
+ * Full DrillSettings (clefs, reveal, difficulty, ledgers, etc.) apply via URL / generate.
  */
 export function play(session: Session, draft: TransportDraft, nowMs: number): Session {
   return {
@@ -140,17 +134,6 @@ export function play(session: Session, draft: TransportDraft, nowMs: number): Se
   };
 }
 
-/** Patch showAnswers on the live session without regenerating or touching transport. */
-export function setShowAnswers(session: Session, showAnswers: boolean): Session {
-  if (session.settings.showAnswers === showAnswers) {
-    return session;
-  }
-  return {
-    ...session,
-    settings: { ...session.settings, showAnswers },
-  };
-}
-
 /** Patch bpm on the live session immediately (including mid-Play). */
 export function setBpm(session: Session, bpm: number): Session {
   const next = clampBpm(bpm);
@@ -161,124 +144,6 @@ export function setBpm(session: Session, bpm: number): Session {
     ...session,
     settings: { ...session.settings, bpm: next },
   };
-}
-
-/** Patch revealEnabled on the live session immediately (including mid-Play). */
-export function setRevealEnabled(session: Session, revealEnabled: boolean): Session {
-  if (session.settings.revealEnabled === revealEnabled) {
-    return session;
-  }
-  return {
-    ...session,
-    settings: { ...session.settings, revealEnabled },
-  };
-}
-
-/** Patch revealN on the live session immediately (including mid-Play). */
-export function setRevealN(session: Session, revealN: number): Session {
-  const next = clampRevealN(revealN);
-  if (session.settings.revealN === next) {
-    return session;
-  }
-  return {
-    ...session,
-    settings: { ...session.settings, revealN: next },
-  };
-}
-
-/**
- * Remap every note's clef to `clef` (positions unchanged); settings.clefs becomes [clef].
- * Used for single-clef (Mix off) selection. Playhead unchanged.
- */
-export function remapNotesToClef(session: Session, clef: Clef): Session {
-  const notes = session.notes.map((n) => (n.clef === clef ? n : { ...n, clef }));
-  const clefsUnchanged = session.settings.clefs.length === 1 && session.settings.clefs[0] === clef;
-  const notesUnchanged = notes.every((n, i) => n === session.notes[i]);
-  if (clefsUnchanged && notesUnchanged) {
-    return session;
-  }
-  return {
-    ...session,
-    settings: { ...session.settings, clefs: [clef], mixClefs: false },
-    notes,
-  };
-}
-
-/**
- * Re-overlay a fresh Mix clef schedule on existing positions; sync clefs + mixClefs.
- * Playhead and transport unchanged. No-op path when notes are empty (settings only).
- */
-export function rescheduleClefs(session: Session, clefs: readonly Clef[], rng: Rng): Session {
-  if (clefs.length < 1) {
-    throw new Error("rescheduleClefs requires at least one clef");
-  }
-  const nextClefs = [...clefs];
-  if (session.notes.length === 0) {
-    return {
-      ...session,
-      settings: { ...session.settings, clefs: nextClefs, mixClefs: true },
-    };
-  }
-  const positions = session.notes.map((n) => n.position);
-  const notes = applyClefSchedule(positions, nextClefs, rng);
-  return {
-    ...session,
-    settings: { ...session.settings, clefs: nextClefs, mixClefs: true },
-    notes,
-  };
-}
-
-/**
- * Mix on: set mixClefs true (notes unchanged).
- * Mix off: remap all notes to the first selected clef (or treble) and clear mix.
- */
-export function setMixClefs(session: Session, mix: boolean, _rng: Rng): Session {
-  if (mix) {
-    if (session.settings.mixClefs) {
-      return session;
-    }
-    return {
-      ...session,
-      settings: { ...session.settings, mixClefs: true },
-    };
-  }
-  const sole = session.settings.clefs[0] ?? "treble";
-  return remapNotesToClef(session, sole);
-}
-
-/**
- * Single-clef: remap sequence to `clef`.
- * Mix: toggle `clef` in the selection (never drop the last); reschedule when changed.
- */
-export function toggleClef(session: Session, clef: Clef, rng: Rng): Session {
-  if (!session.settings.mixClefs) {
-    return remapNotesToClef(session, clef);
-  }
-  const has = session.settings.clefs.includes(clef);
-  if (has) {
-    if (session.settings.clefs.length <= 1) {
-      return session;
-    }
-    const nextClefs = session.settings.clefs.filter((c) => c !== clef);
-    return rescheduleClefs(session, nextClefs, rng);
-  }
-  const nextClefs = CLEFS.filter((c) => session.settings.clefs.includes(c) || c === clef);
-  return rescheduleClefs(session, nextClefs, rng);
-}
-
-/**
- * True when draft generation settings differ from the applied session sequence settings
- * (difficulty, ledger lines). Clefs/mix, BPM, showAnswers, and reveal are live and ignored.
- */
-export function isGenerateDirty(session: Session, draft: DrillSettings): boolean {
-  const s = session.settings;
-  if (draft.difficulty !== s.difficulty) {
-    return true;
-  }
-  if (clampLedgerLines(draft.ledgerLines) !== clampLedgerLines(s.ledgerLines)) {
-    return true;
-  }
-  return false;
 }
 
 /** Absorb elapsed time into playhead/phase, then freeze (playing false). */

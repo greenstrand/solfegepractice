@@ -19,7 +19,7 @@ import {
   tick,
   visibilityFor,
 } from "../model/session";
-import { parseSearch, serializeSearch } from "../model/settingsSearch";
+import { serializeSearch } from "../model/settingsSearch";
 import { clampLedgerLines } from "../model/staffWindow";
 import { useSettingsSearch } from "./useSettingsSearch";
 
@@ -55,9 +55,12 @@ export function useDrillController(): DrillController {
   const settingsKey = serializeSearch(settings);
 
   // Sole session apply: URL settings identity change (includes first paint).
+  // Key on settingsKey (serialized) to avoid object-identity churn; read settings via ref.
   useEffect(() => {
-    const nextSettings = parseSearch(settingsKey).settings;
-    setSession((prev) => generate({ ...stop(prev), settings: { ...nextSettings } }, mathRng()));
+    void settingsKey;
+    setSession((prev) =>
+      generate({ ...stop(prev), settings: { ...settingsRef.current } }, mathRng()),
+    );
   }, [settingsKey]);
 
   const onGenerate = useCallback(() => {

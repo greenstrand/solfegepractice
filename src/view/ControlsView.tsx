@@ -67,8 +67,8 @@ export function ControlsView({
   }, [playing]);
 
   /** Difficulty / ledger lines / mix locked while playing. */
-  const genLocked = playing;
-  /** Single-clef (Mix off) remaps via commit - stay enabled mid-run. */
+  const lockedWhilePlaying = playing;
+  /** Mix-mode clef picks locked while playing; single-clef pick stays enabled. */
   const clefPickLocked = playing && settings.mixClefs;
   const clefInputType = settings.mixClefs ? "checkbox" : "radio";
 
@@ -204,7 +204,7 @@ export function ControlsView({
                 max={10}
                 step={1}
                 value={displayDifficulty}
-                disabled={genLocked}
+                disabled={lockedWhilePlaying}
                 onChange={(e) => writeDifficultyDrag(Number(e.target.value))}
                 onPointerUp={releaseDifficulty}
                 onPointerCancel={releaseDifficulty}
@@ -216,7 +216,7 @@ export function ControlsView({
                 min={1}
                 max={10}
                 value={displayDifficulty}
-                disabled={genLocked}
+                disabled={lockedWhilePlaying}
                 onChange={(e) => {
                   writeDifficultyDrag(null);
                   setDifficulty(Number(e.target.value));
@@ -232,7 +232,7 @@ export function ControlsView({
               <input
                 type="checkbox"
                 checked={settings.mixClefs}
-                disabled={genLocked}
+                disabled={lockedWhilePlaying}
                 onChange={(e) => setMixClefs(e.target.checked)}
               />
               Mix clefs
@@ -292,7 +292,7 @@ export function ControlsView({
                   max={MAX_LEDGER_LINES}
                   step={1}
                   value={displayLedger}
-                  disabled={genLocked}
+                  disabled={lockedWhilePlaying}
                   onChange={(e) => writeLedgerDrag(Number(e.target.value))}
                   onPointerUp={releaseLedger}
                   onPointerCancel={releaseLedger}
@@ -304,7 +304,7 @@ export function ControlsView({
                   min={MIN_LEDGER_LINES}
                   max={MAX_LEDGER_LINES}
                   value={displayLedger}
-                  disabled={genLocked}
+                  disabled={lockedWhilePlaying}
                   onChange={(e) => {
                     writeLedgerDrag(null);
                     setLedgerLines(Number(e.target.value));
