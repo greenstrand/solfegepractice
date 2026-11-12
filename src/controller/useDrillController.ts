@@ -19,7 +19,7 @@ import {
   tick,
   visibilityFor,
 } from "../model/session";
-import { serializeSearch } from "../model/settingsSearch";
+import { sequenceKey } from "../model/settingsSearch";
 import { clampLedgerLines } from "../model/staffWindow";
 import { useSettingsSearch } from "./useSettingsSearch";
 
@@ -52,16 +52,21 @@ export function useDrillController(): DrillController {
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
-  const settingsKey = serializeSearch(settings);
+  const seqKey = sequenceKey(settings);
+  const bpm = settings.bpm;
 
-  // Sole session apply: URL settings identity change (includes first paint).
-  // Key on settingsKey (serialized) to avoid object-identity churn; read settings via ref.
+  // Packed sequence settings (`s`): stop + generate (includes first paint).
   useEffect(() => {
-    void settingsKey;
+    void seqKey;
     setSession((prev) =>
       generate({ ...stop(prev), settings: { ...settingsRef.current } }, mathRng()),
     );
-  }, [settingsKey]);
+  }, [seqKey]);
+
+  // BPM only: live tempo; do not stop or regenerate.
+  useEffect(() => {
+    setSession((prev) => applyBpm(prev, bpm));
+  }, [bpm]);
 
   const onGenerate = useCallback(() => {
     setSession((prev) => generate({ ...prev, settings: { ...settingsRef.current } }, mathRng()));

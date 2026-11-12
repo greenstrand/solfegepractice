@@ -66,6 +66,20 @@ export function serializeSearch(settings: DrillSettings): string {
   return qs === "" ? "" : `?${qs}`;
 }
 
+/** Packed non-bpm identity (`s`); stable across bpm-only changes. */
+export function sequenceKey(settings: DrillSettings): string {
+  return packSettingsBits(settings);
+}
+
+/** True when next settings keep the same packed sequence bits as prevSearch but differ in bpm. */
+export function isBpmOnlySearchChange(prevSearch: string, nextSettings: DrillSettings): boolean {
+  const prevSettings = parseSearch(prevSearch).settings;
+  if (sequenceKey(prevSettings) !== sequenceKey(nextSettings)) {
+    return false;
+  }
+  return serializeSearch(prevSettings) !== serializeSearch(nextSettings);
+}
+
 function normalizeSettings(settings: DrillSettings): DrillSettings {
   const mixClefs = settings.mixClefs === true;
   const selected = CLEFS.filter((c) => settings.clefs.includes(c));

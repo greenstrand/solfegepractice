@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DrillSettings } from "./session";
 import { DEFAULT_SETTINGS, MAX_REVEAL_N, clampRevealN } from "./session";
-import { parseSearch, serializeSearch } from "./settingsSearch";
+import { isBpmOnlySearchChange, parseSearch, sequenceKey, serializeSearch } from "./settingsSearch";
 
 /** Non-default arrange values used across codec tests. */
 const SAMPLE: DrillSettings = {
@@ -107,5 +107,30 @@ describe("serializeSearch / parseSearch", () => {
     const clamped = parseSearch("?bpm=300");
     expect(clamped.settings.bpm).toBe(240);
     expect(serializeSearch(clamped.settings)).toBe("?bpm=240");
+  });
+});
+
+describe("sequenceKey / isBpmOnlySearchChange", () => {
+  it("keeps sequenceKey stable across bpm-only changes", () => {
+    const a = sequenceKey(SAMPLE);
+    const b = sequenceKey({ ...SAMPLE, bpm: 40 });
+    const c = sequenceKey({ ...SAMPLE, bpm: DEFAULT_SETTINGS.bpm });
+    expect(a).toBe(b);
+    expect(a).toBe(c);
+    expect(a).toBe(sequenceKey(parseSearch(serializeSearch(SAMPLE)).settings));
+  });
+
+  it("changes sequenceKey when packed settings change", () => {
+    expect(sequenceKey({ ...SAMPLE, difficulty: 3 })).not.toBe(sequenceKey(SAMPLE));
+    expect(sequenceKey({ ...SAMPLE, showAnswers: false })).not.toBe(sequenceKey(SAMPLE));
+  });
+
+  it("detects bpm-only vs packed s changes against prev search", () => {
+    const prev = serializeSearch(SAMPLE);
+    expect(isBpmOnlySearchChange(prev, { ...SAMPLE, bpm: 140 })).toBe(true);
+    expect(isBpmOnlySearchChange(prev, { ...SAMPLE, bpm: SAMPLE.bpm })).toBe(false);
+    expect(isBpmOnlySearchChange(prev, { ...SAMPLE, difficulty: 2 })).toBe(false);
+    expect(isBpmOnlySearchChange(prev, { ...SAMPLE, difficulty: 2, bpm: 140 })).toBe(false);
+    expect(isBpmOnlySearchChange("?bpm=96", { ...DEFAULT_SETTINGS, bpm: 120 })).toBe(true);
   });
 });

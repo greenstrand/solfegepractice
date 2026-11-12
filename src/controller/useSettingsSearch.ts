@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DrillSettings } from "../model/session";
-import { parseSearch, serializeSearch } from "../model/settingsSearch";
+import { isBpmOnlySearchChange, parseSearch, serializeSearch } from "../model/settingsSearch";
 
 export type SettingsSearchApi = {
   settings: DrillSettings;
@@ -76,13 +76,15 @@ export function useSettingsSearch(): SettingsSearchApi {
   }, []);
 
   const commit = useCallback((nextSettings: DrillSettings) => {
+    const prev = lastWrittenSearchRef.current;
     const next = serializeSearch(nextSettings);
-    if (next === lastWrittenSearchRef.current) {
+    if (next === prev) {
       setLoadError(false);
       return;
     }
-    if (next === "") {
-      window.history.replaceState(null, "", historyUrl(""));
+    // Bare defaults and bpm-only: overwrite history. Packed `s` changes: push.
+    if (next === "" || isBpmOnlySearchChange(prev, nextSettings)) {
+      window.history.replaceState(null, "", historyUrl(next));
     } else {
       window.history.pushState(null, "", historyUrl(next));
     }

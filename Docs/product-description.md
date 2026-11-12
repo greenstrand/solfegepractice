@@ -20,11 +20,11 @@ You generate a long random sequence of notes, then play it back at a chosen temp
 
 - **Generate** - builds a new 256-note practice sequence from the current settings (as reflected in the URL).
 - **Play / Pause / Stop** - paced playback; Space toggles play/pause when you are not typing in a field. These controls do not change the URL.
-- **BPM** - tempo control (about 20-240). Dragging updates tempo live during playback; releasing the slider (or editing the number) updates the URL.
+- **BPM** - tempo control (about 20-240). Dragging updates tempo live during playback; releasing the slider (or editing the number) updates the URL in place without regenerating the sequence or stopping playback.
 - **Difficulty (1-10)** - how melodic vs. jumpy the sequence is (step motion vs. larger leaps, range, and related patterns).
 - **Clefs** - treble, bass, alto, and tenor. With **Mix clefs** off, pick one clef. With **Mix clefs** on, select several; the sequence can change clef mid-run.
 - **Ledger lines (0-4)** - how far above and below the staff notes may appear.
 - **Progressive reveal** - when on, only notes from the start through the playhead, plus a chosen number of **notes ahead**, are shown; the rest stay hidden.
 - **Show answers** - labels each visible note with its fixed-do syllable (do-si).
 - **Hold F** - while held, shows only the current playhead note's syllable (a quick check without leaving answers on for the whole run). Does not change the URL.
-- **Shareable URL** - panel settings live in the query string (`bpm` plus a packed `s` for the rest). Defaults use a bare URL; changing settings (sliders on release) updates the address bar and regenerates a matching sequence. Bookmark, share, Back, and Forward restore those settings; applying a landing or history URL stops playback, resets, and generates a matching sequence. An unreadable `s` shows a brief could-not-load status and falls back to defaults.
+- **Shareable URL** - panel settings live in the query string (`bpm` plus a packed `s` for the rest). Defaults use a bare URL. Changing packed `s` settings (sliders on release) updates the address bar, stops playback, and regenerates a matching sequence; BPM-only URL updates replace the current history entry and leave the sequence and playhead alone. Bookmark, share, Back, and Forward restore those settings; applying a landing or history URL with a new packed `s` stops playback, resets, and generates a matching sequence. An unreadable `s` shows a brief could-not-load status and falls back to defaults.
