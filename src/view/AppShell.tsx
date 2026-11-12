@@ -70,7 +70,6 @@ export function AppShell({ drill }: AppShellProps) {
     <div className="app-shell">
       <header className="app-header">
         <h1 className="brand">Fixed Dojo</h1>
-        <p className="subtitle">Staff positions, fixed do, no escape hatch.</p>
       </header>
 
       <ControlsView

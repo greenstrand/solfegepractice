@@ -16,6 +16,8 @@
 }
 
 .score-row {
+  display: flex;
+  justify-content: center;
   line-height: 0;
   width: 100%;
 }
