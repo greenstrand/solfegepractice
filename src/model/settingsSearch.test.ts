@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { DrillSettings } from "./session";
 import { DEFAULT_SETTINGS, MAX_REVEAL_N, clampRevealN } from "./session";
-import { isBpmOnlySearchChange, parseSearch, sequenceKey, serializeSearch } from "./settingsSearch";
+import {
+  isNonSequenceSearchChange,
+  parseSearch,
+  sequenceKey,
+  serializeSearch,
+} from "./settingsSearch";
 
 /** Non-default arrange values used across codec tests. */
 const SAMPLE: DrillSettings = {
@@ -110,27 +115,61 @@ describe("serializeSearch / parseSearch", () => {
   });
 });
 
-describe("sequenceKey / isBpmOnlySearchChange", () => {
-  it("keeps sequenceKey stable across bpm-only changes", () => {
+describe("sequenceKey / isNonSequenceSearchChange", () => {
+  it("keeps sequenceKey stable across bpm and view-pref-only changes", () => {
     const a = sequenceKey(SAMPLE);
-    const b = sequenceKey({ ...SAMPLE, bpm: 40 });
-    const c = sequenceKey({ ...SAMPLE, bpm: DEFAULT_SETTINGS.bpm });
-    expect(a).toBe(b);
-    expect(a).toBe(c);
+    expect(sequenceKey({ ...SAMPLE, bpm: 40 })).toBe(a);
+    expect(sequenceKey({ ...SAMPLE, bpm: DEFAULT_SETTINGS.bpm })).toBe(a);
+    expect(sequenceKey({ ...SAMPLE, revealEnabled: false })).toBe(a);
+    expect(sequenceKey({ ...SAMPLE, showAnswers: false })).toBe(a);
+    expect(sequenceKey({ ...SAMPLE, revealN: 9 })).toBe(a);
     expect(a).toBe(sequenceKey(parseSearch(serializeSearch(SAMPLE)).settings));
   });
 
-  it("changes sequenceKey when packed settings change", () => {
+  it("changes sequenceKey when generation params change", () => {
     expect(sequenceKey({ ...SAMPLE, difficulty: 3 })).not.toBe(sequenceKey(SAMPLE));
-    expect(sequenceKey({ ...SAMPLE, showAnswers: false })).not.toBe(sequenceKey(SAMPLE));
+    expect(sequenceKey({ ...SAMPLE, clefs: ["treble"] })).not.toBe(sequenceKey(SAMPLE));
+    expect(sequenceKey({ ...SAMPLE, ledgerLines: 4 })).not.toBe(sequenceKey(SAMPLE));
+    expect(sequenceKey({ ...SAMPLE, mixClefs: false, clefs: ["bass"] })).not.toBe(
+      sequenceKey(SAMPLE),
+    );
   });
 
-  it("detects bpm-only vs packed s changes against prev search", () => {
+  it("detects non-sequence (bpm/view) vs generation changes against prev search", () => {
     const prev = serializeSearch(SAMPLE);
-    expect(isBpmOnlySearchChange(prev, { ...SAMPLE, bpm: 140 })).toBe(true);
-    expect(isBpmOnlySearchChange(prev, { ...SAMPLE, bpm: SAMPLE.bpm })).toBe(false);
-    expect(isBpmOnlySearchChange(prev, { ...SAMPLE, difficulty: 2 })).toBe(false);
-    expect(isBpmOnlySearchChange(prev, { ...SAMPLE, difficulty: 2, bpm: 140 })).toBe(false);
-    expect(isBpmOnlySearchChange("?bpm=96", { ...DEFAULT_SETTINGS, bpm: 120 })).toBe(true);
+    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, bpm: 140 })).toBe(true);
+    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, showAnswers: false })).toBe(true);
+    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, revealEnabled: false })).toBe(true);
+    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, revealN: 9 })).toBe(true);
+    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, bpm: 140, showAnswers: false })).toBe(true);
+    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, bpm: SAMPLE.bpm })).toBe(false);
+    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, difficulty: 2 })).toBe(false);
+    expect(isNonSequenceSearchChange(prev, { ...SAMPLE, difficulty: 2, bpm: 140 })).toBe(false);
+    expect(isNonSequenceSearchChange("?bpm=96", { ...DEFAULT_SETTINGS, bpm: 120 })).toBe(true);
+  });
+
+  it("round-trips still include view bits in s", () => {
+    const withView = serializeSearch(SAMPLE);
+    expect(withView).toContain("s=");
+    const parsed = parseSearch(withView).settings;
+    expect(parsed.revealEnabled).toBe(true);
+    expect(parsed.showAnswers).toBe(true);
+    expect(parsed.revealN).toBe(4);
+
+    const viewOff = serializeSearch({
+      ...SAMPLE,
+      revealEnabled: false,
+      showAnswers: false,
+      revealN: 1,
+    });
+    expect(viewOff).not.toBe(withView);
+    expect(sequenceKey(SAMPLE)).toBe(
+      sequenceKey({
+        ...SAMPLE,
+        revealEnabled: false,
+        showAnswers: false,
+        revealN: 1,
+      }),
+    );
   });
 });

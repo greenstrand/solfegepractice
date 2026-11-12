@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DrillSettings } from "../model/session";
-import { isBpmOnlySearchChange, parseSearch, serializeSearch } from "../model/settingsSearch";
+import { isNonSequenceSearchChange, parseSearch, serializeSearch } from "../model/settingsSearch";
 
 export type SettingsSearchApi = {
   settings: DrillSettings;
@@ -82,8 +82,8 @@ export function useSettingsSearch(): SettingsSearchApi {
       setLoadError(false);
       return;
     }
-    // Bare defaults and bpm-only: overwrite history. Packed `s` changes: push.
-    if (next === "" || isBpmOnlySearchChange(prev, nextSettings)) {
+    // Bare defaults and non-sequence (bpm/view): overwrite history. Gen changes: push.
+    if (next === "" || isNonSequenceSearchChange(prev, nextSettings)) {
       window.history.replaceState(null, "", historyUrl(next));
     } else {
       window.history.pushState(null, "", historyUrl(next));

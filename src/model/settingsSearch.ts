@@ -66,13 +66,22 @@ export function serializeSearch(settings: DrillSettings): string {
   return qs === "" ? "" : `?${qs}`;
 }
 
-/** Packed non-bpm identity (`s`); stable across bpm-only changes. */
+/**
+ * GenerationParams identity only; stable across bpm and view-pref changes.
+ * Not the on-wire `s` value (that still packs view bits via packSettingsBits).
+ */
 export function sequenceKey(settings: DrillSettings): string {
-  return packSettingsBits(settings);
+  return packGenerationBits(settings);
 }
 
-/** True when next settings keep the same packed sequence bits as prevSearch but differ in bpm. */
-export function isBpmOnlySearchChange(prevSearch: string, nextSettings: DrillSettings): boolean {
+/**
+ * True when next settings keep the same sequenceKey as prevSearch but differ in
+ * serializeSearch (bpm-only, view-only, or both).
+ */
+export function isNonSequenceSearchChange(
+  prevSearch: string,
+  nextSettings: DrillSettings,
+): boolean {
   const prevSettings = parseSearch(prevSearch).settings;
   if (sequenceKey(prevSettings) !== sequenceKey(nextSettings)) {
     return false;
@@ -115,7 +124,34 @@ function parseBpmParam(raw: string | null): number {
   return clampBpm(n);
 }
 
-/** Pack non-bpm fields to base64url (no padding). */
+/** Stable GenerationParams key (not on-wire `s`). */
+function packGenerationBits(settings: DrillSettings): string {
+  const normalized = normalizeSettings(settings);
+  let clefsMask = 0;
+  for (let i = 0; i < CLEFS.length; i++) {
+    const clef = CLEFS[i];
+    if (clef !== undefined && normalized.clefs.includes(clef)) {
+      clefsMask |= 1 << i;
+    }
+  }
+
+  let bits = 0;
+  bits |= (PACK_VERSION & 0xf) << 28;
+  bits |= (normalized.mixClefs ? 1 : 0) << 27;
+  bits |= (clefsMask & 0xf) << 23;
+  bits |= (normalized.difficulty & 0xf) << 19;
+  bits |= (normalized.ledgerLines & 0x7) << 16;
+
+  const bytes = new Uint8Array([
+    (bits >>> 24) & 0xff,
+    (bits >>> 16) & 0xff,
+    (bits >>> 8) & 0xff,
+    bits & 0xff,
+  ]);
+  return encodeBase64Url(bytes);
+}
+
+/** Pack non-bpm fields (gen + view) to base64url (no padding). On-wire `s` layout. */
 function packSettingsBits(settings: DrillSettings): string {
   const normalized = normalizeSettings(settings);
   let clefsMask = 0;

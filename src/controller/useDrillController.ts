@@ -8,6 +8,7 @@ import {
   type DrillSettings,
   type Session,
   setBpm as applyBpm,
+  setViewPrefs as applyViewPrefs,
   clampBpm,
   clampDifficulty,
   clampRevealN,
@@ -54,8 +55,11 @@ export function useDrillController(): DrillController {
 
   const seqKey = sequenceKey(settings);
   const bpm = settings.bpm;
+  const revealEnabled = settings.revealEnabled;
+  const revealN = settings.revealN;
+  const showAnswers = settings.showAnswers;
 
-  // Packed sequence settings (`s`): stop + generate (includes first paint).
+  // GenerationParams identity: stop + generate (includes first paint).
   useEffect(() => {
     void seqKey;
     setSession((prev) =>
@@ -67,6 +71,11 @@ export function useDrillController(): DrillController {
   useEffect(() => {
     setSession((prev) => applyBpm(prev, bpm));
   }, [bpm]);
+
+  // View prefs: live display patch; do not stop or regenerate.
+  useEffect(() => {
+    setSession((prev) => applyViewPrefs(prev, { revealEnabled, revealN, showAnswers }));
+  }, [revealEnabled, revealN, showAnswers]);
 
   const onGenerate = useCallback(() => {
     setSession((prev) => generate({ ...prev, settings: { ...settingsRef.current } }, mathRng()));
