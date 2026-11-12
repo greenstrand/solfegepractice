@@ -1,4 +1,4 @@
-/** Draft settings + transport controls. Props-driven; no session math. */
+/** Settings + transport controls. Props-driven; no session math. */
 
 import { useEffect, useState } from "react";
 import generateIcon from "../assets/icons/generate.svg";
@@ -11,13 +11,13 @@ import type { DrillSettings } from "../model/session";
 import { MAX_LEDGER_LINES, MIN_LEDGER_LINES } from "../model/staffWindow";
 
 export type ControlsViewProps = {
-  draft: DrillSettings;
+  settings: DrillSettings;
   playing: boolean;
-  generateDirty: boolean;
   onGenerate: () => void;
   onPlay: () => void;
   onPause: () => void;
   onStop: () => void;
+  commit: (settings: DrillSettings) => void;
   setBpm: (bpm: number) => void;
   setDifficulty: (difficulty: number) => void;
   setLedgerLines: (n: number) => void;
@@ -37,13 +37,13 @@ const CLEF_LABELS: Record<Clef, string> = {
 };
 
 export function ControlsView({
-  draft,
+  settings,
   playing,
-  generateDirty,
   onGenerate,
   onPlay,
   onPause,
   onStop,
+  commit,
   setBpm,
   setDifficulty,
   setLedgerLines,
@@ -55,14 +55,53 @@ export function ControlsView({
   className = "controls-view",
 }: ControlsViewProps) {
   const [settingsOpen, setSettingsOpen] = useState(true);
+  const [bpmDrag, setBpmDrag] = useState<number | null>(null);
+  const [difficultyDrag, setDifficultyDrag] = useState<number | null>(null);
+  const [ledgerDrag, setLedgerDrag] = useState<number | null>(null);
+
   useEffect(() => {
     if (playing) setSettingsOpen(false);
   }, [playing]);
-  /** Difficulty / ledger lines need Generate; Mix locked while playing. */
+
+  /** Difficulty / ledger lines / mix locked while playing. */
   const genLocked = playing;
-  /** Single-clef (Mix off) remaps live - stay enabled mid-run. */
-  const clefPickLocked = playing && draft.mixClefs;
-  const clefInputType = draft.mixClefs ? "checkbox" : "radio";
+  /** Single-clef (Mix off) remaps via commit - stay enabled mid-run. */
+  const clefPickLocked = playing && settings.mixClefs;
+  const clefInputType = settings.mixClefs ? "checkbox" : "radio";
+
+  const displayBpm = bpmDrag ?? settings.bpm;
+  const displayDifficulty = difficultyDrag ?? settings.difficulty;
+  const displayLedger = ledgerDrag ?? settings.ledgerLines;
+
+  const releaseBpm = () => {
+    if (bpmDrag === null) {
+      return;
+    }
+    if (bpmDrag !== settings.bpm) {
+      commit({ ...settings, bpm: bpmDrag });
+    }
+    setBpmDrag(null);
+  };
+
+  const releaseDifficulty = () => {
+    if (difficultyDrag === null) {
+      return;
+    }
+    if (difficultyDrag !== settings.difficulty) {
+      setDifficulty(difficultyDrag);
+    }
+    setDifficultyDrag(null);
+  };
+
+  const releaseLedger = () => {
+    if (ledgerDrag === null) {
+      return;
+    }
+    if (ledgerDrag !== settings.ledgerLines) {
+      setLedgerLines(ledgerDrag);
+    }
+    setLedgerDrag(null);
+  };
 
   return (
     <section className={className} aria-label="Drill controls">
@@ -77,11 +116,6 @@ export function ControlsView({
             <img className="btn-icon" src={generateIcon} alt="" aria-hidden="true" />
             <span className="btn-label">Generate</span>
           </button>
-          {generateDirty && !playing ? (
-            <span className="controls-generate-hint" aria-live="polite">
-              Generate to apply
-            </span>
-          ) : null}
           {playing ? (
             <button type="button" className="btn" aria-label="Pause" onClick={onPause}>
               <img className="btn-icon" src={pauseIcon} alt="" aria-hidden="true" />
@@ -107,16 +141,27 @@ export function ControlsView({
               min={40}
               max={160}
               step={1}
-              value={draft.bpm}
-              onChange={(e) => setBpm(Number(e.target.value))}
+              value={displayBpm}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                setBpmDrag(next);
+                setBpm(next);
+              }}
+              onPointerUp={releaseBpm}
+              onMouseUp={releaseBpm}
+              onTouchEnd={releaseBpm}
               aria-label="BPM slider"
             />
             <input
               type="number"
               min={20}
               max={240}
-              value={draft.bpm}
-              onChange={(e) => setBpm(Number(e.target.value))}
+              value={displayBpm}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                setBpmDrag(null);
+                commit({ ...settings, bpm: next });
+              }}
               aria-label="BPM"
             />
           </div>
@@ -133,18 +178,24 @@ export function ControlsView({
                 min={1}
                 max={10}
                 step={1}
-                value={draft.difficulty}
+                value={displayDifficulty}
                 disabled={genLocked}
-                onChange={(e) => setDifficulty(Number(e.target.value))}
+                onChange={(e) => setDifficultyDrag(Number(e.target.value))}
+                onPointerUp={releaseDifficulty}
+                onMouseUp={releaseDifficulty}
+                onTouchEnd={releaseDifficulty}
                 aria-label="Difficulty slider"
               />
               <input
                 type="number"
                 min={1}
                 max={10}
-                value={draft.difficulty}
+                value={displayDifficulty}
                 disabled={genLocked}
-                onChange={(e) => setDifficulty(Number(e.target.value))}
+                onChange={(e) => {
+                  setDifficultyDrag(null);
+                  setDifficulty(Number(e.target.value));
+                }}
                 aria-label="Difficulty"
               />
             </div>
@@ -155,19 +206,19 @@ export function ControlsView({
             <label className="check-label">
               <input
                 type="checkbox"
-                checked={draft.mixClefs}
+                checked={settings.mixClefs}
                 disabled={genLocked}
                 onChange={(e) => setMixClefs(e.target.checked)}
               />
               Mix clefs
             </label>
-            <div className="clef-checks" role={draft.mixClefs ? undefined : "radiogroup"}>
+            <div className="clef-checks" role={settings.mixClefs ? undefined : "radiogroup"}>
               {CLEFS.map((clef) => (
                 <label key={clef} className="check-label">
                   <input
                     type={clefInputType}
-                    name={draft.mixClefs ? undefined : "clef-pick"}
-                    checked={draft.clefs.includes(clef)}
+                    name={settings.mixClefs ? undefined : "clef-pick"}
+                    checked={settings.clefs.includes(clef)}
                     disabled={clefPickLocked}
                     onChange={() => toggleClef(clef)}
                   />
@@ -182,7 +233,7 @@ export function ControlsView({
               <label className="check-label">
                 <input
                   type="checkbox"
-                  checked={draft.revealEnabled}
+                  checked={settings.revealEnabled}
                   onChange={(e) => setRevealEnabled(e.target.checked)}
                 />
                 Progressive reveal
@@ -192,8 +243,8 @@ export function ControlsView({
                 <input
                   type="number"
                   min={0}
-                  value={draft.revealN}
-                  disabled={!draft.revealEnabled}
+                  value={settings.revealN}
+                  disabled={!settings.revealEnabled}
                   onChange={(e) => setRevealN(Number(e.target.value))}
                   aria-label="Notes ahead"
                 />
@@ -202,7 +253,7 @@ export function ControlsView({
             <label className="check-label">
               <input
                 type="checkbox"
-                checked={draft.showAnswers}
+                checked={settings.showAnswers}
                 onChange={(e) => setShowAnswers(e.target.checked)}
               />
               Show answers
@@ -215,18 +266,24 @@ export function ControlsView({
                   min={MIN_LEDGER_LINES}
                   max={MAX_LEDGER_LINES}
                   step={1}
-                  value={draft.ledgerLines}
+                  value={displayLedger}
                   disabled={genLocked}
-                  onChange={(e) => setLedgerLines(Number(e.target.value))}
+                  onChange={(e) => setLedgerDrag(Number(e.target.value))}
+                  onPointerUp={releaseLedger}
+                  onMouseUp={releaseLedger}
+                  onTouchEnd={releaseLedger}
                   aria-label="Ledger lines slider"
                 />
                 <input
                   type="number"
                   min={MIN_LEDGER_LINES}
                   max={MAX_LEDGER_LINES}
-                  value={draft.ledgerLines}
+                  value={displayLedger}
                   disabled={genLocked}
-                  onChange={(e) => setLedgerLines(Number(e.target.value))}
+                  onChange={(e) => {
+                    setLedgerDrag(null);
+                    setLedgerLines(Number(e.target.value));
+                  }}
                   aria-label="Ledger lines"
                 />
               </div>

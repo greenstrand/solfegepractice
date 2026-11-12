@@ -1,38 +1,35 @@
-/** Draft settings + session transport; owns rAF tick loop. */
+/** URL settings + session transport; owns rAF tick loop. */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Clef } from "../model/clefSolfegeMap";
+import { CLEFS } from "../model/clefSolfegeMap";
 import { mathRng } from "../model/rng";
 import {
-  DEFAULT_SETTINGS,
   type DrillSettings,
   type Session,
   setBpm as applyBpm,
-  setMixClefs as applyMixClefs,
-  setRevealEnabled as applyRevealEnabled,
-  setRevealN as applyRevealN,
-  setShowAnswers as applyShowAnswers,
-  toggleClef as applyToggleClef,
   clampBpm,
   clampDifficulty,
   clampRevealN,
   createSession,
   generate,
-  isGenerateDirty,
   pause,
   play,
   stop,
   tick,
   visibilityFor,
 } from "../model/session";
+import { parseSearch, serializeSearch } from "../model/settingsSearch";
 import { clampLedgerLines } from "../model/staffWindow";
+import { useSettingsSearch } from "./useSettingsSearch";
 
 export type DrillController = {
-  draft: DrillSettings;
+  settings: DrillSettings;
+  loadError: boolean;
   session: Session;
   setFocusPeek: (on: boolean) => void;
-  /** True when draft gen settings differ from applied session (needs Generate). */
-  generateDirty: boolean;
+  commit: (settings: DrillSettings) => void;
+  /** Mid-drag live BPM patch; does not write the URL. Commit on release. */
   setBpm: (bpm: number) => void;
   setDifficulty: (difficulty: number) => void;
   setLedgerLines: (n: number) => void;
@@ -49,28 +46,22 @@ export type DrillController = {
 };
 
 export function useDrillController(): DrillController {
-  const [draft, setDraft] = useState<DrillSettings>(DEFAULT_SETTINGS);
-  const [session, setSession] = useState<Session>(() => createSession(DEFAULT_SETTINGS));
+  const { settings, loadError, commit } = useSettingsSearch();
+  const [session, setSession] = useState<Session>(() => createSession(settings));
   const [focusPeek, setFocusPeek] = useState(false);
-  const didMountGenerate = useRef(false);
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+
+  const settingsKey = serializeSearch(settings);
+
+  // Sole session apply: URL settings identity change (includes first paint).
+  useEffect(() => {
+    const nextSettings = parseSearch(settingsKey).settings;
+    setSession((prev) => generate({ ...stop(prev), settings: { ...nextSettings } }, mathRng()));
+  }, [settingsKey]);
 
   const onGenerate = useCallback(() => {
-    setSession((prev) => {
-      const withDraft: Session = {
-        ...prev,
-        settings: { ...draft },
-      };
-      return generate(withDraft, mathRng());
-    });
-  }, [draft]);
-
-  // Generate once on mount so the score is not empty.
-  useEffect(() => {
-    if (didMountGenerate.current) {
-      return;
-    }
-    didMountGenerate.current = true;
-    setSession((prev) => generate({ ...prev, settings: { ...DEFAULT_SETTINGS } }, mathRng()));
+    setSession((prev) => generate({ ...prev, settings: { ...settingsRef.current } }, mathRng()));
   }, []);
 
   // rAF loop while playing.
@@ -89,17 +80,18 @@ export function useDrillController(): DrillController {
 
   const onPlay = useCallback(() => {
     const nowMs = performance.now();
+    const s = settingsRef.current;
     setSession((prev) =>
       play(
         prev,
         {
-          bpm: draft.bpm,
-          showAnswers: draft.showAnswers,
+          bpm: s.bpm,
+          showAnswers: s.showAnswers,
         },
         nowMs,
       ),
     );
-  }, [draft.bpm, draft.showAnswers]);
+  }, []);
 
   const onPause = useCallback(() => {
     const nowMs = performance.now();
@@ -112,59 +104,79 @@ export function useDrillController(): DrillController {
 
   const setBpm = useCallback((bpm: number) => {
     const next = clampBpm(bpm);
-    setDraft((d) => ({ ...d, bpm: next }));
     setSession((prev) => applyBpm(prev, next));
   }, []);
 
-  const setDifficulty = useCallback((difficulty: number) => {
-    setDraft((d) => ({ ...d, difficulty: clampDifficulty(difficulty) }));
-  }, []);
+  const setDifficulty = useCallback(
+    (difficulty: number) => {
+      commit({ ...settingsRef.current, difficulty: clampDifficulty(difficulty) });
+    },
+    [commit],
+  );
 
-  const setLedgerLines = useCallback((n: number) => {
-    setDraft((d) => ({ ...d, ledgerLines: clampLedgerLines(n) }));
-  }, []);
+  const setLedgerLines = useCallback(
+    (n: number) => {
+      commit({ ...settingsRef.current, ledgerLines: clampLedgerLines(n) });
+    },
+    [commit],
+  );
 
-  const setRevealEnabled = useCallback((enabled: boolean) => {
-    setDraft((d) => ({ ...d, revealEnabled: enabled }));
-    setSession((prev) => applyRevealEnabled(prev, enabled));
-  }, []);
+  const setRevealEnabled = useCallback(
+    (enabled: boolean) => {
+      commit({ ...settingsRef.current, revealEnabled: enabled });
+    },
+    [commit],
+  );
 
-  const setRevealN = useCallback((n: number) => {
-    const next = clampRevealN(n);
-    setDraft((d) => ({ ...d, revealN: next }));
-    setSession((prev) => applyRevealN(prev, next));
-  }, []);
+  const setRevealN = useCallback(
+    (n: number) => {
+      commit({ ...settingsRef.current, revealN: clampRevealN(n) });
+    },
+    [commit],
+  );
 
-  const setShowAnswers = useCallback((show: boolean) => {
-    setDraft((d) => ({ ...d, showAnswers: show }));
-    setSession((prev) => applyShowAnswers(prev, show));
-  }, []);
+  const setShowAnswers = useCallback(
+    (show: boolean) => {
+      commit({ ...settingsRef.current, showAnswers: show });
+    },
+    [commit],
+  );
 
-  const setMixClefs = useCallback((mix: boolean) => {
-    setSession((prev) => {
-      const next = applyMixClefs(prev, mix, mathRng());
-      setDraft((d) => ({
-        ...d,
-        clefs: next.settings.clefs,
-        mixClefs: next.settings.mixClefs,
-      }));
-      return next;
-    });
-  }, []);
+  const setMixClefs = useCallback(
+    (mix: boolean) => {
+      const current = settingsRef.current;
+      if (mix) {
+        commit({ ...current, mixClefs: true });
+        return;
+      }
+      const sole = current.clefs[0] ?? "treble";
+      commit({ ...current, mixClefs: false, clefs: [sole] });
+    },
+    [commit],
+  );
 
-  const toggleClef = useCallback((clef: Clef) => {
-    setSession((prev) => {
-      const next = applyToggleClef(prev, clef, mathRng());
-      setDraft((d) => ({
-        ...d,
-        clefs: next.settings.clefs,
-        mixClefs: next.settings.mixClefs,
-      }));
-      return next;
-    });
-  }, []);
-
-  const generateDirty = useMemo(() => isGenerateDirty(session, draft), [session, draft]);
+  const toggleClef = useCallback(
+    (clef: Clef) => {
+      const current = settingsRef.current;
+      if (!current.mixClefs) {
+        commit({ ...current, clefs: [clef] });
+        return;
+      }
+      const has = current.clefs.includes(clef);
+      if (has) {
+        if (current.clefs.length <= 1) {
+          return;
+        }
+        commit({ ...current, clefs: current.clefs.filter((c) => c !== clef) });
+        return;
+      }
+      commit({
+        ...current,
+        clefs: CLEFS.filter((c) => current.clefs.includes(c) || c === clef),
+      });
+    },
+    [commit],
+  );
 
   const visibilityForNote = useCallback(
     (index: number) => visibilityFor(session, index, { focusPeek }),
@@ -172,10 +184,11 @@ export function useDrillController(): DrillController {
   );
 
   return {
-    draft,
+    settings,
+    loadError,
     session,
     setFocusPeek,
-    generateDirty,
+    commit,
     setBpm,
     setDifficulty,
     setLedgerLines,

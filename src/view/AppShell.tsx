@@ -21,7 +21,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 export function AppShell({ drill }: AppShellProps) {
-  const { draft, session, onPlay, onPause, setFocusPeek } = drill;
+  const { settings, session, onPlay, onPause, setFocusPeek } = drill;
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -73,13 +73,13 @@ export function AppShell({ drill }: AppShellProps) {
       </header>
 
       <ControlsView
-        draft={draft}
+        settings={settings}
         playing={session.playing}
-        generateDirty={drill.generateDirty}
         onGenerate={drill.onGenerate}
         onPlay={drill.onPlay}
         onPause={drill.onPause}
         onStop={drill.onStop}
+        commit={drill.commit}
         setBpm={drill.setBpm}
         setDifficulty={drill.setDifficulty}
         setLedgerLines={drill.setLedgerLines}
