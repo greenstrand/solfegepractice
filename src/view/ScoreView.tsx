@@ -71,7 +71,7 @@ export function ScoreView({
   }
 
   const equalized = maxStaffRowWidth(rows, perRow);
-  // Measured path stretches rows to containerWidth; notesPerRowProp/test path keeps equalized.
+  // Live measure uses containerWidth; notesPerRowProp keeps equalized width.
   const targetWidth =
     containerWidth > 0 && notesPerRowProp === undefined ? containerWidth : equalized;
 

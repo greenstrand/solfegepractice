@@ -74,7 +74,7 @@ body {
   flex-direction: column;
   gap: 1rem;
   min-height: 0;
-  flex-shrink: 1;
+  flex-shrink: 0;
   overflow: visible;
 }
 
@@ -111,7 +111,7 @@ body {
   min-height: 0;
 }
 
-.controls-expand-toggle {
+.controls-settings-toggle {
   position: absolute;
   bottom: 0;
   right: 1.15rem;
@@ -134,17 +134,17 @@ body {
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
-.controls-expand-toggle:hover {
+.controls-settings-toggle:hover {
   border-color: var(--accent);
   color: var(--ink);
 }
 
-.controls-expand-toggle:focus-visible {
+.controls-settings-toggle:focus-visible {
   outline: 2px solid var(--accent-soft);
   outline-offset: 2px;
 }
 
-.controls-expand-caret {
+.controls-settings-caret {
   display: block;
   width: 0;
   height: 0;
@@ -153,11 +153,11 @@ body {
   pointer-events: none;
 }
 
-.controls-expand-caret.is-down {
+.controls-settings-caret.points-down {
   border-top: 6px solid currentColor;
 }
 
-.controls-expand-caret.is-up {
+.controls-settings-caret.points-up {
   border-bottom: 6px solid currentColor;
 }
 
@@ -348,7 +348,7 @@ body {
     margin-bottom: 1.15rem;
   }
 
-  .controls-expand-toggle {
+  .controls-settings-toggle {
     right: 0.85rem;
   }
 
