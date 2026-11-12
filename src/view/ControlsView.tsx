@@ -85,7 +85,15 @@ export function ControlsView({
               <span className="btn-label">Pause</span>
             </button>
           ) : (
-            <button type="button" className="btn" aria-label="Play" onClick={onPlay}>
+            <button
+              type="button"
+              className="btn"
+              aria-label="Play"
+              onClick={() => {
+                setExpanded(false);
+                onPlay();
+              }}
+            >
               <img className="btn-icon" src={playIcon} alt="" aria-hidden="true" />
               <span className="btn-label">Play</span>
             </button>
