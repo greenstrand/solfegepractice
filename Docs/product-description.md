@@ -18,10 +18,10 @@ You generate a long random sequence of notes, then play it back at a chosen temp
 
 ## Features
 
-- **Generate** - mints a new numerical `seed` into the URL (push history) and builds a new 256-note practice sequence from the current sequence settings.
+- **Generate** - writes a new numerical `seed` into the URL (push history) and builds a new 256-note practice sequence from the current sequence settings.
 - **Play / Pause / Stop** - paced playback; Space toggles play/pause when you are not typing in a field. These controls do not change the URL.
 - **BPM** - tempo control (about 20-240). Dragging updates tempo live during playback; releasing the slider (or editing the number) updates the URL in place without regenerating the sequence or stopping playback.
-- **Sequence settings** - difficulty, clefs, and ledger lines shape which notes are generated. Changing any of them keeps the current `seed`, updates the URL, stops playback, and re-derives the sequence.
+- **Sequence settings** - difficulty, clefs, and ledger lines shape which notes are generated. Changing any of them keeps the current `seed`, updates the URL, stops playback, and regenerates the sequence.
   - **Difficulty (1-10)** - how melodic vs. jumpy the sequence is (step motion vs. larger leaps, range, and related patterns).
   - **Clefs** - treble, bass, alto, and tenor. With **Mix clefs** off, pick one clef. With **Mix clefs** on, select several; the sequence can change clef mid-run.
   - **Ledger lines (0-4)** - how far above and below the staff notes may appear.
@@ -29,4 +29,4 @@ You generate a long random sequence of notes, then play it back at a chosen temp
   - **Progressive reveal** - when on, only notes from the start through the playhead, plus a chosen number of **notes ahead**, are shown; the rest stay hidden.
   - **Show answers** - labels each visible note with its fixed-do syllable (do-si).
 - **Hold F** - while held, shows only the current playhead note's syllable (a quick check without leaving answers on for the whole run). Does not change the URL.
-- **Shareable URL** - panel settings live in the query string: numerical `seed`, `bpm`, and a packed `s` for sequence and view settings. Same `seed` with the same sequence settings yields the same drill for this app version. Bookmark, share, Back, and Forward restore those settings; opening a link (or stepping history) with new sequence settings or a new `seed` stops playback, resets, and generates a matching sequence. A missing or invalid `seed` is replaced into the URL; an invalid `seed` or unreadable `s` shows a brief could-not-load status (unreadable `s` falls back to defaults).
+- **Shareable URL** - the query string holds numerical `seed`, `bpm`, and a packed `s` for sequence and view settings. Same `seed` plus the same sequence settings yields the same drill for this app version. Bookmark, share, Back, and Forward restore those settings; a link or history step with new sequence settings or a new `seed` stops playback, resets, and regenerates a matching sequence. A missing or invalid `seed` is written into the URL; an invalid `seed` or unreadable `s` shows a brief could-not-load status (unreadable `s` falls back to defaults).
