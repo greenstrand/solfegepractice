@@ -1,4 +1,4 @@
-/** URL settings + session transport; owns rAF tick loop. */
+/** URL settings + session playback; owns rAF tick loop. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Clef } from "../model/clefSolfegeMap";

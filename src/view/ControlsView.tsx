@@ -1,4 +1,4 @@
-/** Settings + transport controls. Props-driven; no session math. */
+/** Settings + playback controls. Props-driven; no session math. */
 
 import { useEffect, useRef, useState } from "react";
 import generateIcon from "../assets/icons/generate.svg";
