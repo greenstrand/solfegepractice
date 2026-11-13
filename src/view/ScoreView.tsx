@@ -16,6 +16,8 @@ export type ScoreViewProps = {
   showCursor?: boolean;
   /** Max ledger lines above/below; reserved staff height follows applied session. */
   ledgerLines?: number;
+  highlightDo?: boolean;
+  highlightSol?: boolean;
   className?: string;
 };
 
@@ -29,6 +31,8 @@ export function ScoreView({
   notesPerRow: notesPerRowProp,
   showCursor = true,
   ledgerLines = DEFAULT_LEDGER_LINES,
+  highlightDo = false,
+  highlightSol = false,
   className = "score-view",
 }: ScoreViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -89,6 +93,8 @@ export function ScoreView({
             slotCount={perRow}
             targetWidth={targetWidth}
             ledgerLines={ledgerLines}
+            highlightDo={highlightDo}
+            highlightSol={highlightSol}
           />
         </div>
       ))}

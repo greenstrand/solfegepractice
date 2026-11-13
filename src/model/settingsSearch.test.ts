@@ -18,6 +18,8 @@ const SAMPLE: DrillSettings = {
   revealN: 4,
   showAnswers: true,
   revealEnabled: true,
+  highlightDo: false,
+  highlightSol: false,
   seed: 42,
 };
 
@@ -161,6 +163,8 @@ describe("generationKey / isNonGenerationSearchChange", () => {
     expect(generationKey({ ...SAMPLE, revealEnabled: false })).toBe(a);
     expect(generationKey({ ...SAMPLE, showAnswers: false })).toBe(a);
     expect(generationKey({ ...SAMPLE, revealN: 9 })).toBe(a);
+    expect(generationKey({ ...SAMPLE, highlightDo: true })).toBe(a);
+    expect(generationKey({ ...SAMPLE, highlightSol: true })).toBe(a);
     expect(generationKey({ ...SAMPLE, seed: 99 })).not.toBe(a);
     expect(a).toBe(generationKey(parseSearch(serializeSearch(SAMPLE)).settings));
   });
@@ -180,6 +184,15 @@ describe("generationKey / isNonGenerationSearchChange", () => {
     expect(isNonGenerationSearchChange(prev, { ...SAMPLE, showAnswers: false })).toBe(true);
     expect(isNonGenerationSearchChange(prev, { ...SAMPLE, revealEnabled: false })).toBe(true);
     expect(isNonGenerationSearchChange(prev, { ...SAMPLE, revealN: 9 })).toBe(true);
+    expect(isNonGenerationSearchChange(prev, { ...SAMPLE, highlightDo: true })).toBe(true);
+    expect(isNonGenerationSearchChange(prev, { ...SAMPLE, highlightSol: true })).toBe(true);
+    expect(
+      isNonGenerationSearchChange(prev, {
+        ...SAMPLE,
+        highlightDo: true,
+        highlightSol: true,
+      }),
+    ).toBe(true);
     expect(isNonGenerationSearchChange(prev, { ...SAMPLE, bpm: 140, showAnswers: false })).toBe(
       true,
     );
@@ -215,5 +228,37 @@ describe("generationKey / isNonGenerationSearchChange", () => {
         revealN: 1,
       }),
     );
+  });
+
+  it("round-trips highlightDo and highlightSol bits", () => {
+    const bothOn: DrillSettings = {
+      ...SAMPLE,
+      highlightDo: true,
+      highlightSol: true,
+    };
+    const parsedBoth = parseSearch(serializeSearch(bothOn)).settings;
+    expect(parsedBoth.highlightDo).toBe(true);
+    expect(parsedBoth.highlightSol).toBe(true);
+
+    const doOnly = parseSearch(
+      serializeSearch({ ...SAMPLE, highlightDo: true, highlightSol: false }),
+    ).settings;
+    expect(doOnly.highlightDo).toBe(true);
+    expect(doOnly.highlightSol).toBe(false);
+
+    const solOnly = parseSearch(
+      serializeSearch({ ...SAMPLE, highlightDo: false, highlightSol: true }),
+    ).settings;
+    expect(solOnly.highlightDo).toBe(false);
+    expect(solOnly.highlightSol).toBe(true);
+  });
+
+  it("legacy s with low bits 0 yields both highlight flags false", () => {
+    // version=1, mix=1, clefs=0, difficulty=3, ledger=3, reveal off, show off, revealN=1, bits 0-5 zero
+    // bytes 0x18 0x1b 0x00 0x40 -> GBsAQA
+    const { settings, loadError } = parseSearch("?s=GBsAQA&seed=0");
+    expect(loadError).toBe(false);
+    expect(settings.highlightDo).toBe(false);
+    expect(settings.highlightSol).toBe(false);
   });
 });

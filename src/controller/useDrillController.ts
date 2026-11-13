@@ -37,6 +37,8 @@ export type DrillController = {
   setRevealEnabled: (enabled: boolean) => void;
   setRevealN: (n: number) => void;
   setShowAnswers: (show: boolean) => void;
+  setHighlightDo: (on: boolean) => void;
+  setHighlightSol: (on: boolean) => void;
   setMixClefs: (mix: boolean) => void;
   toggleClef: (clef: Clef) => void;
   onGenerate: () => void;
@@ -58,6 +60,8 @@ export function useDrillController(): DrillController {
   const revealEnabled = settings.revealEnabled;
   const revealN = settings.revealN;
   const showAnswers = settings.showAnswers;
+  const highlightDo = settings.highlightDo;
+  const highlightSol = settings.highlightSol;
 
   // GenerationParams identity: stop + generate (includes first paint).
   useEffect(() => {
@@ -72,8 +76,16 @@ export function useDrillController(): DrillController {
 
   // View prefs: live display patch; do not stop or regenerate.
   useEffect(() => {
-    setSession((prev) => applyViewPrefs(prev, { revealEnabled, revealN, showAnswers }));
-  }, [revealEnabled, revealN, showAnswers]);
+    setSession((prev) =>
+      applyViewPrefs(prev, {
+        revealEnabled,
+        revealN,
+        showAnswers,
+        highlightDo,
+        highlightSol,
+      }),
+    );
+  }, [revealEnabled, revealN, showAnswers, highlightDo, highlightSol]);
 
   const onGenerate = useCallback(() => {
     commit({ ...settingsRef.current, seed: createSeed() });
@@ -147,6 +159,20 @@ export function useDrillController(): DrillController {
     [commit],
   );
 
+  const setHighlightDo = useCallback(
+    (on: boolean) => {
+      commit({ ...settingsRef.current, highlightDo: on });
+    },
+    [commit],
+  );
+
+  const setHighlightSol = useCallback(
+    (on: boolean) => {
+      commit({ ...settingsRef.current, highlightSol: on });
+    },
+    [commit],
+  );
+
   const setMixClefs = useCallback(
     (mix: boolean) => {
       const current = settingsRef.current;
@@ -200,6 +226,8 @@ export function useDrillController(): DrillController {
     setRevealEnabled,
     setRevealN,
     setShowAnswers,
+    setHighlightDo,
+    setHighlightSol,
     setMixClefs,
     toggleClef,
     onGenerate,

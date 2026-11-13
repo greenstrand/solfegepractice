@@ -1,6 +1,6 @@
 /** One staff row: lines, ledgers, clefs, noteheads, playhead, solfege labels. */
 
-import { solfegeFor } from "../model/clefSolfegeMap";
+import { isDo, isSol, solfegeFor } from "../model/clefSolfegeMap";
 import type { DrillNote } from "../model/generate";
 import type { NoteVisibility } from "../model/session";
 import { DEFAULT_LEDGER_LINES, STAFF_LINES, ledgerLinesFor } from "../model/staffWindow";
@@ -47,6 +47,8 @@ export type StaffViewProps = {
   targetWidth?: number;
   /** Max ledger lines above/below; drives reserved SVG height and ledger draw. */
   ledgerLines?: number;
+  highlightDo?: boolean;
+  highlightSol?: boolean;
   className?: string;
 };
 
@@ -60,6 +62,8 @@ export function StaffView({
   slotCount,
   targetWidth,
   ledgerLines = DEFAULT_LEDGER_LINES,
+  highlightDo = false,
+  highlightSol = false,
   className = "staff-view",
 }: StaffViewProps) {
   const midClefs = midClefChangeCount(notes);
@@ -155,7 +159,12 @@ export function StaffView({
 
             {vis.noteVisible ? (
               <ellipse
-                className="notehead"
+                className={
+                  (highlightDo && isDo(note.position, note.clef)) ||
+                  (highlightSol && isSol(note.position, note.clef))
+                    ? "notehead notehead-open"
+                    : "notehead"
+                }
                 cx={cx}
                 cy={cy}
                 rx={NOTEHEAD_RADIUS * 1.15}

@@ -21,6 +21,8 @@ export type ViewPrefs = {
   revealEnabled: boolean;
   revealN: number;
   showAnswers: boolean;
+  highlightDo: boolean;
+  highlightSol: boolean;
 };
 
 export type DrillSettings = GenerationParams & ViewPrefs & { bpm: number };
@@ -62,6 +64,8 @@ export const DEFAULT_VIEW: ViewPrefs = {
   revealN: 1,
   showAnswers: false,
   revealEnabled: false,
+  highlightDo: false,
+  highlightSol: false,
 };
 
 export const DEFAULT_SETTINGS: DrillSettings = {
@@ -156,10 +160,14 @@ export function setViewPrefs(session: Session, prefs: ViewPrefs): Session {
   const revealN = clampRevealN(prefs.revealN);
   const revealEnabled = prefs.revealEnabled === true;
   const showAnswers = prefs.showAnswers === true;
+  const highlightDo = prefs.highlightDo === true;
+  const highlightSol = prefs.highlightSol === true;
   if (
     session.settings.revealN === revealN &&
     session.settings.revealEnabled === revealEnabled &&
-    session.settings.showAnswers === showAnswers
+    session.settings.showAnswers === showAnswers &&
+    session.settings.highlightDo === highlightDo &&
+    session.settings.highlightSol === highlightSol
   ) {
     return session;
   }
@@ -170,6 +178,8 @@ export function setViewPrefs(session: Session, prefs: ViewPrefs): Session {
       revealN,
       revealEnabled,
       showAnswers,
+      highlightDo,
+      highlightSol,
     },
   };
 }

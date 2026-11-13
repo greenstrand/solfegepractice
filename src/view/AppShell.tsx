@@ -87,6 +87,8 @@ export function AppShell({ drill }: AppShellProps) {
         setRevealEnabled={drill.setRevealEnabled}
         setRevealN={drill.setRevealN}
         setShowAnswers={drill.setShowAnswers}
+        setHighlightDo={drill.setHighlightDo}
+        setHighlightSol={drill.setHighlightSol}
         setMixClefs={drill.setMixClefs}
         toggleClef={drill.toggleClef}
       />
@@ -97,6 +99,8 @@ export function AppShell({ drill }: AppShellProps) {
           playhead={session.playhead}
           visibilityFor={drill.visibilityFor}
           ledgerLines={session.settings.ledgerLines}
+          highlightDo={session.settings.highlightDo}
+          highlightSol={session.settings.highlightSol}
         />
       </section>
     </div>

@@ -27,6 +27,7 @@ You generate a long random sequence of notes, then play it back at a chosen temp
   - **Ledger lines (0-4)** - how far above and below the staff notes may appear.
 - **View settings** - how the sequence is displayed. Changing them updates the URL in place without regenerating the sequence or stopping playback.
   - **Progressive reveal** - when on, only notes from the start through the playhead, plus a chosen number of **notes ahead**, are shown; the rest stay hidden.
+  - **Highlights** - optional toggles for **do** and **sol**; when on, every visible matching note is drawn as an open circle.
   - **Show answers** - labels each visible note with its fixed-do syllable (do-si).
 - **Hold F** - while held, shows only the current playhead note's syllable (a quick check without leaving answers on for the whole run).
 - **Shareable URL** - query string holds numerical `seed`, `bpm`, and a packed `s` for sequence and view settings. Playback and Hold F stay out of the URL. Same `seed` plus the same sequence settings yields the same drill for this app version. Bookmark, share, Back, and Forward load those values as a matching drill. A missing or invalid `seed` is written into the URL; an invalid `seed` or unreadable `s` shows a brief could-not-load status (unreadable `s` falls back to defaults).
