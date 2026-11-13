@@ -5,18 +5,12 @@ import { seededRng } from "./rng";
 import {
   type DrillSettings,
   type Session,
-  type TransportDraft,
   createSession,
   generate,
-  isGenerateDirty,
   pause,
   play,
-  remapNotesToClef,
-  rescheduleClefs,
   setBpm,
-  setRevealEnabled,
-  setRevealN,
-  setShowAnswers,
+  setViewPrefs,
   stop,
   tick,
   visibilityFor,
@@ -47,12 +41,6 @@ function sessionWithNotes(
     notes,
   };
 }
-
-const transport = (partial: Partial<TransportDraft> = {}): TransportDraft => ({
-  bpm: 80,
-  showAnswers: false,
-  ...partial,
-});
 
 describe("createSession", () => {
   it("defaults to treble-only, mix off, difficulty 3, ledgerLines 3, bpm 60, revealN 1, reveal off, no answers", () => {
@@ -91,9 +79,14 @@ describe("generate", () => {
 
 describe("play / tick BPM advance", () => {
   it("advances playhead by floor(elapsed beats) at bpm (1 note per beat)", () => {
-    let s = sessionWithNotes(Array.from({ length: 16 }, (_, i) => note(10 + (i % 3), "treble")));
+    let s = sessionWithNotes(
+      Array.from({ length: 16 }, (_, i) => note(10 + (i % 3), "treble")),
+      {
+        settings: { bpm: 60 },
+      },
+    );
     // bpm 60 => 1000ms per beat
-    s = play(s, transport({ bpm: 60 }), 0);
+    s = play(s, 0);
     expect(s.playing).toBe(true);
     expect(s.playhead).toBe(0);
 
@@ -105,7 +98,7 @@ describe("play / tick BPM advance", () => {
     expect(s.playhead).toBe(3);
   });
 
-  it("play applies bpm/showAnswers without regenerating notes or changing reveal", () => {
+  it("play starts transport without changing settings or notes", () => {
     const notes = [note(8, "treble"), note(9, "treble"), note(10, "bass")];
     let s = sessionWithNotes(notes, {
       settings: {
@@ -117,10 +110,10 @@ describe("play / tick BPM advance", () => {
         clefs: ["treble", "bass"],
       },
     });
-    s = play(s, transport({ bpm: 120, showAnswers: true }), 100);
+    s = play(s, 100);
     expect(s.notes).toEqual(notes);
-    expect(s.settings.bpm).toBe(120);
-    expect(s.settings.showAnswers).toBe(true);
+    expect(s.settings.bpm).toBe(80);
+    expect(s.settings.showAnswers).toBe(false);
     expect(s.settings.revealN).toBe(0);
     expect(s.settings.revealEnabled).toBe(false);
     expect(s.settings.difficulty).toBe(3);
@@ -159,165 +152,49 @@ describe("setBpm live apply", () => {
   });
 });
 
-describe("setShowAnswers", () => {
-  it("toggles showAnswers live without changing notes or transport", () => {
+describe("setViewPrefs live apply", () => {
+  it("updates reveal/showAnswers without stopping, regenerating, or moving playhead", () => {
     const notes = [note(8, "treble"), note(9, "treble")];
     let s = sessionWithNotes(notes, {
       playhead: 1,
       playing: true,
       beatPhase: 0.25,
       lastTickMs: 500,
-      settings: { showAnswers: false, bpm: 90 },
+      settings: {
+        revealEnabled: false,
+        revealN: 1,
+        showAnswers: false,
+      },
     });
-    s = setShowAnswers(s, true);
+    s = setViewPrefs(s, { revealEnabled: true, revealN: 3, showAnswers: true });
+    expect(s.settings.revealEnabled).toBe(true);
+    expect(s.settings.revealN).toBe(3);
     expect(s.settings.showAnswers).toBe(true);
-    expect(s.settings.bpm).toBe(90);
     expect(s.notes).toEqual(notes);
     expect(s.playhead).toBe(1);
     expect(s.playing).toBe(true);
     expect(s.beatPhase).toBe(0.25);
     expect(s.lastTickMs).toBe(500);
-    expect(visibilityFor(s, 0).labelVisible).toBe(true);
-    expect(visibilityFor(s, 1).labelVisible).toBe(false);
-
-    s = setShowAnswers(s, false);
-    expect(s.settings.showAnswers).toBe(false);
-    expect(visibilityFor(s, 0).labelVisible).toBe(false);
   });
 
-  it("returns same session when value unchanged", () => {
-    const s = sessionWithNotes([note(10, "treble")], { settings: { showAnswers: true } });
-    expect(setShowAnswers(s, true)).toBe(s);
-  });
-});
-
-describe("setRevealEnabled / setRevealN live apply", () => {
-  it("updates reveal settings immediately while playing without changing notes or playhead", () => {
-    const notes = [note(8, "treble"), note(9, "treble"), note(10, "treble"), note(11, "treble")];
-    let s = sessionWithNotes(notes, {
-      playhead: 1,
-      playing: true,
-      beatPhase: 0.25,
-      lastTickMs: 500,
-      settings: { revealEnabled: false, revealN: 0 },
-    });
-    expect(visibilityFor(s, 3).noteVisible).toBe(true);
-
-    s = setRevealEnabled(s, true);
-    expect(s.settings.revealEnabled).toBe(true);
-    expect(s.notes).toEqual(notes);
-    expect(s.playhead).toBe(1);
-    expect(s.playing).toBe(true);
-    expect(visibilityFor(s, 1).noteVisible).toBe(true);
-    expect(visibilityFor(s, 2).noteVisible).toBe(false);
-
-    s = setRevealN(s, 1);
-    expect(s.settings.revealN).toBe(1);
-    expect(visibilityFor(s, 2).noteVisible).toBe(true);
-    expect(visibilityFor(s, 3).noteVisible).toBe(false);
-  });
-
-  it("returns same session when reveal values unchanged after clamp", () => {
+  it("returns same session when view prefs unchanged after clamp", () => {
     const s = sessionWithNotes([note(10, "treble")], {
-      settings: { revealEnabled: true, revealN: 2 },
+      settings: { revealEnabled: true, revealN: 2, showAnswers: true },
     });
-    expect(setRevealEnabled(s, true)).toBe(s);
-    expect(setRevealN(s, 2)).toBe(s);
-  });
-});
-
-describe("remapNotesToClef", () => {
-  it("remaps every note clef; positions unchanged; settings.clefs becomes single", () => {
-    const notes = [note(8, "treble"), note(12, "bass"), note(10, "alto")];
-    let s = sessionWithNotes(notes, {
-      settings: { clefs: ["treble", "bass", "alto"], mixClefs: true },
-      playhead: 2,
-    });
-    s = remapNotesToClef(s, "tenor");
-    expect(s.notes.map((n) => n.position)).toEqual([8, 12, 10]);
-    expect(s.notes.every((n) => n.clef === "tenor")).toBe(true);
-    expect(s.settings.clefs).toEqual(["tenor"]);
-    expect(s.settings.mixClefs).toBe(false);
-    expect(s.playhead).toBe(2);
-  });
-
-  it("returns same session when already single-clef matched", () => {
-    const notes = [note(8, "bass"), note(9, "bass")];
-    const s = sessionWithNotes(notes, { settings: { clefs: ["bass"], mixClefs: false } });
-    expect(remapNotesToClef(s, "bass")).toBe(s);
-  });
-});
-
-describe("rescheduleClefs", () => {
-  it("keeps positions and playhead; overlays new clefs; syncs settings", () => {
-    const notes = Array.from({ length: 32 }, (_, i) =>
-      note(8 + (i % 5), i % 2 === 0 ? "treble" : "bass"),
-    );
-    const positions = notes.map((n) => n.position);
-    let s = sessionWithNotes(notes, {
-      playhead: 7,
-      beatPhase: 0.4,
-      settings: { clefs: ["treble", "bass"], mixClefs: true },
-    });
-    s = rescheduleClefs(s, ["alto", "tenor"], seededRng(55));
-    expect(s.notes.map((n) => n.position)).toEqual(positions);
-    expect(s.notes).toHaveLength(32);
-    expect(s.notes.every((n) => n.clef === "alto" || n.clef === "tenor")).toBe(true);
-    expect(s.settings.clefs).toEqual(["alto", "tenor"]);
-    expect(s.settings.mixClefs).toBe(true);
-    expect(s.playhead).toBe(7);
-    expect(s.beatPhase).toBe(0.4);
-  });
-});
-
-describe("isGenerateDirty", () => {
-  it("is dirty for ledgerLines; ignores mix/clef set, bpm, showAnswers, reveal", () => {
-    const notes = [note(10, "treble"), note(11, "bass")];
-    const s = sessionWithNotes(notes, {
-      settings: {
-        clefs: ["treble", "bass"],
-        mixClefs: true,
-        difficulty: 3,
-        ledgerLines: 3,
-        revealEnabled: true,
-        revealN: 1,
-        bpm: 80,
-        showAnswers: false,
-      },
-    });
-    const draftSameGen: DrillSettings = {
-      ...s.settings,
-      bpm: 140,
-      showAnswers: true,
-      revealEnabled: false,
-      revealN: 4,
-      clefs: ["treble", "alto"],
-      mixClefs: false,
-    };
-    expect(isGenerateDirty(s, draftSameGen)).toBe(false);
-
-    const draftLedgers: DrillSettings = {
-      ...s.settings,
-      ledgerLines: 0,
-    };
-    expect(isGenerateDirty(s, draftLedgers)).toBe(true);
-  });
-
-  it("is dirty for difficulty draft changes; reveal draft is not dirty", () => {
-    const s = sessionWithNotes([note(10, "treble")], {
-      settings: { difficulty: 3, revealEnabled: false, revealN: 1 },
-    });
-    expect(isGenerateDirty(s, { ...s.settings, difficulty: 5 })).toBe(true);
-    expect(isGenerateDirty(s, { ...s.settings, revealEnabled: true })).toBe(false);
-    expect(isGenerateDirty(s, { ...s.settings, revealN: 4 })).toBe(false);
+    expect(setViewPrefs(s, { revealEnabled: true, revealN: 2, showAnswers: true })).toBe(s);
   });
 });
 
 describe("pause freezes phase", () => {
   it("pause freezes fractional beat; resume continues from same phase", () => {
-    let s = sessionWithNotes(Array.from({ length: 16 }, () => note(10, "treble")));
+    let s = sessionWithNotes(
+      Array.from({ length: 16 }, () => note(10, "treble")),
+      {
+        settings: { bpm: 60 },
+      },
+    );
     // bpm 60 => 1000ms/beat
-    s = play(s, transport({ bpm: 60 }), 0);
+    s = play(s, 0);
     // 500ms => 0.5 beat, playhead still 0
     s = tick(s, 500);
     expect(s.playhead).toBe(0);
@@ -334,7 +211,7 @@ describe("pause freezes phase", () => {
     expect(s.beatPhase).toBeCloseTo(0.5, 5);
 
     // Resume: another 500ms completes 1 beat
-    s = play(s, transport({ bpm: 60 }), 10_000);
+    s = play(s, 10_000);
     s = tick(s, 10_500);
     expect(s.playhead).toBe(1);
     expect(s.beatPhase).toBeCloseTo(0, 5);
@@ -454,8 +331,8 @@ describe("end stops", () => {
     const notes = Array.from({ length: SEQUENCE_LENGTH }, (_, i) =>
       note(10 + (i % 2 === 0 ? 0 : 1), "treble"),
     );
-    let s = sessionWithNotes(notes, { playhead: SEQUENCE_LENGTH - 2 });
-    s = play(s, transport({ bpm: 60 }), 0);
+    let s = sessionWithNotes(notes, { playhead: SEQUENCE_LENGTH - 2, settings: { bpm: 60 } });
+    s = play(s, 0);
     // 3 beats from index 254 -> would reach 257, clamp to done
     s = tick(s, 3000);
     expect(s.playing).toBe(false);

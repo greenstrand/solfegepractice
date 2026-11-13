@@ -1,4 +1,4 @@
-# Fixed Dojo — product description
+# Fixed Dojo - product description
 
 Fixed Dojo is a browser practice tool for **fixed-do solfege** reading on a musical staff.
 
@@ -18,12 +18,15 @@ You generate a long random sequence of notes, then play it back at a chosen temp
 
 ## Features
 
-- **Generate** — builds a new 256-note practice sequence from the current difficulty, clef, and ledger-line settings.
-- **Play / Pause / Stop** — paced playback; Space toggles play/pause when you are not typing in a field.
-- **BPM** — tempo control (about 20–240). Changes apply without regenerating the sequence.
-- **Difficulty (1–10)** — how melodic vs. jumpy the sequence is (step motion vs. larger leaps, range, and related patterns). Requires **Generate** to apply.
-- **Clefs** — treble, bass, alto, and tenor. With **Mix clefs** off, pick one clef (switching remaps the current notes). With **Mix clefs** on, select several; the sequence can change clef mid-run. Mix changes while stopped update the sequence without a full regenerate; difficulty and ledger lines still need **Generate**.
-- **Ledger lines (0–4)** — how far above and below the staff notes may appear. Requires **Generate** to apply.
-- **Progressive reveal** — when on, only notes from the start through the playhead, plus a chosen number of **notes ahead**, are shown; the rest stay hidden.
-- **Show answers** — labels each visible note with its fixed-do syllable (do–si).
-- **Hold F** — while held, shows only the current playhead note’s syllable (a quick check without leaving answers on for the whole run).
+- **Generate** - builds a new 256-note practice sequence from the current settings (as reflected in the URL).
+- **Play / Pause / Stop** - paced playback; Space toggles play/pause when you are not typing in a field. These controls do not change the URL.
+- **BPM** - tempo control (about 20-240). Dragging updates tempo live during playback; releasing the slider (or editing the number) updates the URL in place without regenerating the sequence or stopping playback.
+- **Sequence settings** - difficulty, clefs, and ledger lines shape which notes are generated. Changing any of them updates the URL, stops playback, and regenerates.
+  - **Difficulty (1-10)** - how melodic vs. jumpy the sequence is (step motion vs. larger leaps, range, and related patterns).
+  - **Clefs** - treble, bass, alto, and tenor. With **Mix clefs** off, pick one clef. With **Mix clefs** on, select several; the sequence can change clef mid-run.
+  - **Ledger lines (0-4)** - how far above and below the staff notes may appear.
+- **View settings** - settings that change how the sequence is displayed. Changing them updates the URL in place without regenerating the sequence or stopping playback.
+  - **Progressive reveal** - when on, only notes from the start through the playhead, plus a chosen number of **notes ahead**, are shown; the rest stay hidden.
+  - **Show answers** - labels each visible note with its fixed-do syllable (do-si).
+- **Hold F** - while held, shows only the current playhead note's syllable (a quick check without leaving answers on for the whole run). Does not change the URL.
+- **Shareable URL** - panel settings live in the query string (`bpm` plus a packed `s` for sequence and view settings). Defaults use a bare URL. Bookmark, share, Back, and Forward restore those settings; opening a link (or stepping history) with new sequence settings stops playback, resets, and generates a matching sequence. An unreadable `s` shows a brief could-not-load status and falls back to defaults.
