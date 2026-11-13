@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Clef } from "../model/clefSolfegeMap";
 import { CLEFS } from "../model/clefSolfegeMap";
-import { mintSeed } from "../model/rng";
+import { createSeed } from "../model/rng";
 import {
   type DrillSettings,
   type Session,
@@ -76,7 +76,7 @@ export function useDrillController(): DrillController {
   }, [revealEnabled, revealN, showAnswers]);
 
   const onGenerate = useCallback(() => {
-    commit({ ...settingsRef.current, seed: mintSeed() });
+    commit({ ...settingsRef.current, seed: createSeed() });
   }, [commit]);
 
   // rAF loop while playing.

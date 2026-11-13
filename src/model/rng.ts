@@ -22,6 +22,6 @@ export function mulberry32(seed: number): Rng {
 export const seededRng = mulberry32;
 
 /** Fresh uint32 seed from Math.random (full 0..0xffffffff range). */
-export function mintSeed(): number {
+export function createSeed(): number {
   return (Math.random() * 0x100000000) >>> 0;
 }

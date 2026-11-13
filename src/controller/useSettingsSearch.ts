@@ -1,7 +1,7 @@
 /** History adapter: React search string <-> location.search via push/replace/popstate. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { mintSeed } from "../model/rng";
+import { createSeed } from "../model/rng";
 import type { DrillSettings } from "../model/session";
 import { isNonGenerationSearchChange, parseSearch, serializeSearch } from "../model/settingsSearch";
 
@@ -16,7 +16,7 @@ type CanonicalSearch = {
   loadError: boolean;
 };
 
-/** Last ensure result; Strict Mode double-init must not remint for the same raw. */
+/** Last ensure result; Strict Mode double-init must not create again for the same raw. */
 let lastEnsure: { raw: string; canonical: CanonicalSearch } | null = null;
 
 function readWindowSearch(): string {
@@ -31,7 +31,7 @@ function historyUrl(search: string): string {
 }
 
 /**
- * Parse raw search; mint when needsSeed; serialize. shouldReplace on mint, loadError,
+ * Parse raw search; create seed when needsSeed; serialize. shouldReplace on create, loadError,
  * or non-canonical form. loadError stays from parse (invalid seed true; missing false).
  */
 function recoverFromSearch(rawSearch: string): {
@@ -41,13 +41,13 @@ function recoverFromSearch(rawSearch: string): {
 } {
   const parsed = parseSearch(rawSearch);
   let settings = parsed.settings;
-  let didMint = false;
+  let didCreate = false;
   if (parsed.needsSeed) {
-    settings = { ...settings, seed: mintSeed() };
-    didMint = true;
+    settings = { ...settings, seed: createSeed() };
+    didCreate = true;
   }
   const canonical = serializeSearch(settings);
-  const shouldReplace = didMint || parsed.loadError || canonical !== rawSearch;
+  const shouldReplace = didCreate || parsed.loadError || canonical !== rawSearch;
   return {
     search: shouldReplace ? canonical : rawSearch,
     loadError: parsed.loadError,
@@ -56,8 +56,8 @@ function recoverFromSearch(rawSearch: string): {
 }
 
 /**
- * Sync read of location.search with one mint+replace per raw (Strict Mode safe).
- * After replace, a second read that sees the seeded URL does not remint.
+ * Sync read of location.search with one create+replace per raw (Strict Mode safe).
+ * After replace, a second read that sees the seeded URL does not create again.
  */
 function ensureCanonicalSearch(): CanonicalSearch {
   const raw = readWindowSearch();
@@ -109,7 +109,7 @@ export function useSettingsSearch(): SettingsSearchApi {
       return;
     }
     // Seed is always serialized. Non-generation (bpm/view): replace. Gen/seed changes: push.
-    // Caller supplies seed; commit does not mint.
+    // Caller supplies seed; commit does not create.
     if (isNonGenerationSearchChange(prev, nextSettings)) {
       window.history.replaceState(null, "", historyUrl(next));
     } else {
