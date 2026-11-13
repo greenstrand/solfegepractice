@@ -1,7 +1,7 @@
-/** Positions-first drill generation; clef schedule overlay; difficulty lerp; no unisons. Pure given rng. */
+/** Positions-first drill generation; clef schedule overlay; difficulty lerp; no unisons. Pure given seed. */
 
 import { type Clef, isDo } from "./clefSolfegeMap";
-import type { Rng } from "./rng";
+import { type Rng, seededRng } from "./rng";
 import {
   DEFAULT_LEDGER_LINES,
   MIDDLE_LINE,
@@ -13,6 +13,13 @@ import {
 export type { Rng };
 
 export const SEQUENCE_LENGTH = 256;
+
+/**
+ * XOR used to derive the note-position stream seed from the drill seed.
+ * Clef schedule uses `seed`; positions use `seed ^ NOTE_STREAM_XOR` so the two
+ * streams do not share RNG consumption.
+ */
+export const NOTE_STREAM_XOR = 0x9e3779b9;
 
 export type DrillNote = {
   position: number;
@@ -518,28 +525,31 @@ export function applyClefSchedule(
 
 /**
  * Build a 256-note drill: one continuous position stream, then clef schedule overlay.
+ * Derives independent clef-schedule and note-position RNGs from `settings.seed`.
  * Throws if `settings.clefs` is empty.
  */
-export function generateDrill(
-  settings: {
-    clefs: readonly Clef[];
-    difficulty: number;
-    ledgerLines?: number;
-  },
-  rng: Rng,
-): DrillNote[] {
+export function generateDrill(settings: {
+  clefs: readonly Clef[];
+  difficulty: number;
+  ledgerLines?: number;
+  seed: number;
+}): DrillNote[] {
   if (settings.clefs.length < 1) {
     throw new Error("generateDrill requires at least one clef");
   }
 
+  const seed = settings.seed >>> 0;
+  const clefRng = seededRng(seed);
+  const noteRng = seededRng((seed ^ NOTE_STREAM_XOR) >>> 0);
+
   const ledgerLines = clampLedgerLines(settings.ledgerLines ?? DEFAULT_LEDGER_LINES);
-  const schedule = buildClefSchedule(settings.clefs, rng, SEQUENCE_LENGTH);
+  const schedule = buildClefSchedule(settings.clefs, clefRng, SEQUENCE_LENGTH);
   const startClefForDo = schedule[0]?.clef;
   const positions = samplePositions(
     SEQUENCE_LENGTH,
     settings.difficulty,
     ledgerLines,
-    rng,
+    noteRng,
     startClefForDo,
   );
   return zipDrill(positions, schedule);

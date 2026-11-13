@@ -1,7 +1,7 @@
 /** Session transport and progressive-reveal visibility. Pure reducers; no DOM/rAF. */
 
 import type { Clef } from "./clefSolfegeMap";
-import { type DrillNote, type Rng, SEQUENCE_LENGTH, generateDrill } from "./generate";
+import { type DrillNote, SEQUENCE_LENGTH, generateDrill } from "./generate";
 import { DEFAULT_LEDGER_LINES, clampLedgerLines } from "./staffWindow";
 
 /** Fields that define which notes generateDrill produces. */
@@ -12,6 +12,8 @@ export type GenerationParams = {
   difficulty: number;
   /** Max ledger lines above and below the staff (same count each side). */
   ledgerLines: number;
+  /** Deterministic drill seed (uint32). */
+  seed: number;
 };
 
 /** Display helpers; live-patchable without regenerating. */
@@ -53,6 +55,7 @@ export const DEFAULT_GENERATION: GenerationParams = {
   mixClefs: false,
   difficulty: 3,
   ledgerLines: DEFAULT_LEDGER_LINES,
+  seed: 0,
 };
 
 export const DEFAULT_VIEW: ViewPrefs = {
@@ -103,15 +106,16 @@ export function createSession(overrides?: Partial<DrillSettings>): Session {
 }
 
 /** Replace notes via generateDrill; reset playhead and transport phase. */
-export function generate(session: Session, rng: Rng): Session {
+export function generate(session: Session): Session {
   const ledgerLines = clampLedgerLines(session.settings.ledgerLines);
   const gen: GenerationParams = {
     clefs: session.settings.clefs,
     mixClefs: session.settings.mixClefs,
     difficulty: session.settings.difficulty,
     ledgerLines,
+    seed: session.settings.seed,
   };
-  const notes = generateDrill(gen, rng);
+  const notes = generateDrill(gen);
   return {
     ...session,
     settings: { ...session.settings, ledgerLines },
