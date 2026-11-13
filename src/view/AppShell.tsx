@@ -99,6 +99,8 @@ export function AppShell({ drill }: AppShellProps) {
           playhead={session.playhead}
           visibilityFor={drill.visibilityFor}
           ledgerLines={session.settings.ledgerLines}
+          highlightDo={session.settings.highlightDo}
+          highlightSol={session.settings.highlightSol}
         />
       </section>
     </div>
