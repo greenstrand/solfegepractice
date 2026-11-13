@@ -1,4 +1,4 @@
-/** Pure DrillSettings <-> location.search codec (bitpacked s + bpm). No History/DOM. */
+/** Pure DrillSettings <-> location.search codec (bitpacked s + bpm + seed). No History/DOM. */
 
 import { CLEFS, type Clef } from "./clefSolfegeMap";
 import {
@@ -12,42 +12,48 @@ import { clampLedgerLines } from "./staffWindow";
 
 const PACK_VERSION = 1;
 const B64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+const SEED_MAX = 0xffffffff;
 
 export type ParseSearchResult = {
   settings: DrillSettings;
   loadError: boolean;
+  needsSeed: boolean;
 };
 
 /** Parse location.search (with or without leading ?). */
 export function parseSearch(search: string): ParseSearchResult {
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
   const bpm = parseBpmParam(params.get("bpm"));
+  const seedParsed = parseSeedParam(params.get("seed"));
   const sRaw = params.get("s");
 
   if (sRaw === null || sRaw === "") {
     return {
-      settings: normalizeSettings({ ...DEFAULT_SETTINGS, bpm }),
-      loadError: false,
+      settings: normalizeSettings({ ...DEFAULT_SETTINGS, bpm, seed: seedParsed.seed }),
+      loadError: seedParsed.seedError,
+      needsSeed: seedParsed.needsSeed,
     };
   }
 
   const packed = unpackSettingsBits(sRaw);
   if (packed === null) {
     return {
-      settings: normalizeSettings({ ...DEFAULT_SETTINGS, bpm }),
+      settings: normalizeSettings({ ...DEFAULT_SETTINGS, bpm, seed: seedParsed.seed }),
       loadError: true,
+      needsSeed: seedParsed.needsSeed,
     };
   }
 
   return {
-    settings: normalizeSettings({ ...packed, bpm }),
-    loadError: false,
+    settings: normalizeSettings({ ...packed, bpm, seed: seedParsed.seed }),
+    loadError: seedParsed.seedError,
+    needsSeed: seedParsed.needsSeed,
   };
 }
 
 /**
  * Serialize settings to a search string matching location.search shape.
- * Bare "" when normalized settings equal defaults.
+ * Always emits seed; omits s/bpm when they match defaults.
  */
 export function serializeSearch(settings: DrillSettings): string {
   const normalized = normalizeSettings(settings);
@@ -61,9 +67,9 @@ export function serializeSearch(settings: DrillSettings): string {
   if (normalized.bpm !== DEFAULT_SETTINGS.bpm) {
     params.set("bpm", String(normalized.bpm));
   }
+  params.set("seed", String(normalized.seed));
 
-  const qs = params.toString();
-  return qs === "" ? "" : `?${qs}`;
+  return `?${params.toString()}`;
 }
 
 /**
@@ -71,7 +77,7 @@ export function serializeSearch(settings: DrillSettings): string {
  * Not the on-wire `s` value (that still packs view bits via packSettingsBits).
  */
 export function generationKey(settings: DrillSettings): string {
-  return packGenerationBits(settings);
+  return `${packGenerationBits(settings)}:${String(settings.seed)}`;
 }
 
 /**
@@ -110,6 +116,7 @@ function normalizeSettings(settings: DrillSettings): DrillSettings {
     revealN: clampRevealN(settings.revealN),
     showAnswers: settings.showAnswers === true,
     revealEnabled: settings.revealEnabled === true,
+    seed: settings.seed,
   };
 }
 
@@ -122,6 +129,28 @@ function parseBpmParam(raw: string | null): number {
     return DEFAULT_SETTINGS.bpm;
   }
   return clampBpm(n);
+}
+
+/**
+ * Seed grammar: absent -> needsSeed; present must match /^\d+$/ and lie in
+ * [0, 0xffffffff]. Never parseInt/>>>0-coerce garbage into a valid seed.
+ */
+function parseSeedParam(raw: string | null): {
+  seed: number;
+  needsSeed: boolean;
+  seedError: boolean;
+} {
+  if (raw === null) {
+    return { seed: DEFAULT_SETTINGS.seed, needsSeed: true, seedError: false };
+  }
+  if (!/^\d+$/.test(raw)) {
+    return { seed: DEFAULT_SETTINGS.seed, needsSeed: true, seedError: true };
+  }
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0 || n > SEED_MAX) {
+    return { seed: DEFAULT_SETTINGS.seed, needsSeed: true, seedError: true };
+  }
+  return { seed: n, needsSeed: false, seedError: false };
 }
 
 /** Pack GenerationParams into the high bit fields of the 32-bit layout. */
@@ -154,7 +183,7 @@ function bitsToBase64Url(bits: number): string {
   return encodeBase64Url(bytes);
 }
 
-/** Stable GenerationParams key (not on-wire `s`). */
+/** Stable GenerationParams key without seed (seed appended in generationKey). */
 function packGenerationBits(settings: DrillSettings): string {
   return bitsToBase64Url(generationBits(settings));
 }
@@ -171,7 +200,7 @@ function packSettingsBits(settings: DrillSettings): string {
 }
 
 /** Unpack s; null if corrupt or unknown version. Reserved bits ignored on read. */
-function unpackSettingsBits(s: string): Omit<DrillSettings, "bpm"> | null {
+function unpackSettingsBits(s: string): Omit<DrillSettings, "bpm" | "seed"> | null {
   const bytes = decodeBase64Url(s);
   if (bytes === null || bytes.length !== 4) {
     return null;

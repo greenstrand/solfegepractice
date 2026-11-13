@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CLEFS, type Clef } from "./clefSolfegeMap";
 import { type DrillNote, SEQUENCE_LENGTH, generateDrill } from "./generate";
-import { seededRng } from "./rng";
 import { MAX_POSITION, MIN_POSITION, maxPosition, minPosition } from "./staffWindow";
 
 function meanAbsDelta(notes: DrillNote[]): number {
@@ -37,7 +36,7 @@ function clefRuns(notes: DrillNote[]): { clef: Clef; length: number }[] {
 
 describe("generateDrill", () => {
   it("returns SEQUENCE_LENGTH notes with positions in [0,20] and no consecutive unisons", () => {
-    const notes = generateDrill({ clefs: ["treble"], difficulty: 5 }, seededRng(42));
+    const notes = generateDrill({ clefs: ["treble"], difficulty: 5, seed: 42 });
     expect(notes).toHaveLength(SEQUENCE_LENGTH);
     for (let i = 0; i < notes.length; i++) {
       expect(notes[i].position).toBeGreaterThanOrEqual(MIN_POSITION);
@@ -51,16 +50,17 @@ describe("generateDrill", () => {
 
   it("single clef => all notes same clef", () => {
     for (const clef of CLEFS) {
-      const notes = generateDrill({ clefs: [clef], difficulty: 3 }, seededRng(7));
+      const notes = generateDrill({ clefs: [clef], difficulty: 3, seed: 7 });
       expect(notes.every((n) => n.clef === clef)).toBe(true);
     }
   });
 
   it("multi-clef produces clef changes; run lengths respect remainder rules", () => {
-    const notes = generateDrill(
-      { clefs: ["treble", "bass", "alto"], difficulty: 4 },
-      seededRng(99),
-    );
+    const notes = generateDrill({
+      clefs: ["treble", "bass", "alto"],
+      difficulty: 4,
+      seed: 99,
+    });
     const runs = clefRuns(notes);
     expect(runs.length).toBeGreaterThan(1);
     const total = runs.reduce((acc, r) => acc + r.length, 0);
@@ -76,8 +76,8 @@ describe("generateDrill", () => {
   });
 
   it("diff 1 has higher step rate and smaller mean abs delta than diff 10", () => {
-    const easy = generateDrill({ clefs: ["treble"], difficulty: 1 }, seededRng(123));
-    const hard = generateDrill({ clefs: ["treble"], difficulty: 10 }, seededRng(123));
+    const easy = generateDrill({ clefs: ["treble"], difficulty: 1, seed: 123 });
+    const hard = generateDrill({ clefs: ["treble"], difficulty: 10, seed: 123 });
     expect(stepRate(easy)).toBeGreaterThan(stepRate(hard));
     expect(meanAbsDelta(hard)).toBeGreaterThan(meanAbsDelta(easy));
     expect(stepRate(easy)).toBeGreaterThan(0.7);
@@ -85,7 +85,7 @@ describe("generateDrill", () => {
   });
 
   it("throws when clefs is empty", () => {
-    expect(() => generateDrill({ clefs: [], difficulty: 3 }, seededRng(1))).toThrow(
+    expect(() => generateDrill({ clefs: [], difficulty: 3, seed: 1 })).toThrow(
       /at least one clef/i,
     );
   });
@@ -95,10 +95,12 @@ describe("generateDrill", () => {
     const hi = maxPosition(0);
     expect(lo).toBe(6);
     expect(hi).toBe(14);
-    const notes = generateDrill(
-      { clefs: ["treble"], difficulty: 10, ledgerLines: 0 },
-      seededRng(42),
-    );
+    const notes = generateDrill({
+      clefs: ["treble"],
+      difficulty: 10,
+      ledgerLines: 0,
+      seed: 42,
+    });
     for (const note of notes) {
       expect(note.position).toBeGreaterThanOrEqual(lo);
       expect(note.position).toBeLessThanOrEqual(hi);
@@ -110,10 +112,12 @@ describe("generateDrill", () => {
     const hi = maxPosition(4);
     expect(lo).toBe(-2);
     expect(hi).toBe(22);
-    const notes = generateDrill(
-      { clefs: ["treble"], difficulty: 10, ledgerLines: 4 },
-      seededRng(42),
-    );
+    const notes = generateDrill({
+      clefs: ["treble"],
+      difficulty: 10,
+      ledgerLines: 4,
+      seed: 42,
+    });
     for (const note of notes) {
       expect(note.position).toBeGreaterThanOrEqual(lo);
       expect(note.position).toBeLessThanOrEqual(hi);
@@ -123,10 +127,11 @@ describe("generateDrill", () => {
   it("positions stay continuous across clef boundaries at low difficulty", () => {
     // Diff 1-2: maxLeap is 1 near d=1 and small near d=2; steps dominate everywhere,
     // including indices where the clef changes (no melodic reset at boundaries).
-    const notes = generateDrill(
-      { clefs: ["treble", "bass", "alto", "tenor"], difficulty: 2 },
-      seededRng(77),
-    );
+    const notes = generateDrill({
+      clefs: ["treble", "bass", "alto", "tenor"],
+      difficulty: 2,
+      seed: 77,
+    });
     expect(notes).toHaveLength(SEQUENCE_LENGTH);
     expect(stepRate(notes)).toBeGreaterThan(0.7);
     expect(meanAbsDelta(notes)).toBeLessThan(2);
@@ -144,5 +149,18 @@ describe("generateDrill", () => {
     const boundarySteps = boundaryDeltas.filter((d) => d <= 2).length;
     expect(boundarySteps / boundaryDeltas.length).toBeGreaterThan(0.7);
     expect(Math.max(...boundaryDeltas)).toBeLessThanOrEqual(4);
+  });
+
+  it("same seed and params produce identical drills; different seed differs", () => {
+    const params = {
+      clefs: ["treble", "bass"] as const,
+      difficulty: 4,
+      seed: 12345,
+    };
+    const a = generateDrill(params);
+    const b = generateDrill(params);
+    expect(a).toEqual(b);
+    const c = generateDrill({ ...params, seed: 12346 });
+    expect(c).not.toEqual(a);
   });
 });

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Clef } from "../model/clefSolfegeMap";
 import { CLEFS } from "../model/clefSolfegeMap";
-import { mathRng } from "../model/rng";
+import { createSeed } from "../model/rng";
 import {
   type DrillSettings,
   type Session,
@@ -62,9 +62,7 @@ export function useDrillController(): DrillController {
   // GenerationParams identity: stop + generate (includes first paint).
   useEffect(() => {
     void genKey;
-    setSession((prev) =>
-      generate({ ...stop(prev), settings: { ...settingsRef.current } }, mathRng()),
-    );
+    setSession((prev) => generate({ ...stop(prev), settings: { ...settingsRef.current } }));
   }, [genKey]);
 
   // BPM only: live tempo; do not stop or regenerate.
@@ -78,8 +76,8 @@ export function useDrillController(): DrillController {
   }, [revealEnabled, revealN, showAnswers]);
 
   const onGenerate = useCallback(() => {
-    setSession((prev) => generate({ ...prev, settings: { ...settingsRef.current } }, mathRng()));
-  }, []);
+    commit({ ...settingsRef.current, seed: createSeed() });
+  }, [commit]);
 
   // rAF loop while playing.
   useEffect(() => {

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DrillNote } from "./generate";
 import { SEQUENCE_LENGTH } from "./generate";
-import { seededRng } from "./rng";
 import {
   type DrillSettings,
   type Session,
@@ -43,12 +42,13 @@ function sessionWithNotes(
 }
 
 describe("createSession", () => {
-  it("defaults to treble-only, mix off, difficulty 3, ledgerLines 3, bpm 60, revealN 1, reveal off, no answers", () => {
+  it("defaults to treble-only, mix off, difficulty 3, ledgerLines 3, seed 0, bpm 60, revealN 1, reveal off, no answers", () => {
     const s = createSession();
     expect(s.settings.clefs).toEqual(["treble"]);
     expect(s.settings.mixClefs).toBe(false);
     expect(s.settings.difficulty).toBe(3);
     expect(s.settings.ledgerLines).toBe(3);
+    expect(s.settings.seed).toBe(0);
     expect(s.settings.bpm).toBe(60);
     expect(s.settings.revealEnabled).toBe(false);
     expect(s.settings.revealN).toBe(1);
@@ -61,7 +61,7 @@ describe("createSession", () => {
 
 describe("generate", () => {
   it("replaces notes and resets playhead", () => {
-    let s = createSession();
+    let s = createSession({ seed: 1 });
     s = {
       ...s,
       playhead: 40,
@@ -69,7 +69,7 @@ describe("generate", () => {
       beatPhase: 0.5,
       notes: [note(10, "treble")],
     };
-    s = generate(s, seededRng(1));
+    s = generate(s);
     expect(s.notes).toHaveLength(SEQUENCE_LENGTH);
     expect(s.playhead).toBe(0);
     expect(s.playing).toBe(false);
