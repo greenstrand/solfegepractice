@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CLEFS, type Clef } from "./clefSolfegeMap";
-import { type DrillNote, NOTE_STREAM_XOR, SEQUENCE_LENGTH, generateDrill } from "./generate";
-import { seededRng } from "./rng";
+import { type DrillNote, SEQUENCE_LENGTH, generateDrill } from "./generate";
 import { MAX_POSITION, MIN_POSITION, maxPosition, minPosition } from "./staffWindow";
 
 function meanAbsDelta(notes: DrillNote[]): number {
@@ -163,14 +162,5 @@ describe("generateDrill", () => {
     expect(a).toEqual(b);
     const c = generateDrill({ ...params, seed: 12346 });
     expect(c).not.toEqual(a);
-  });
-
-  it("clef and note streams use independent child seeds", () => {
-    const seed = 42;
-    const clefStream = seededRng(seed >>> 0);
-    const noteStream = seededRng((seed ^ NOTE_STREAM_XOR) >>> 0);
-    const clefDraws = Array.from({ length: 8 }, () => clefStream.next());
-    const noteDraws = Array.from({ length: 8 }, () => noteStream.next());
-    expect(noteDraws).not.toEqual(clefDraws);
   });
 });

@@ -19,7 +19,16 @@ export const SEQUENCE_LENGTH = 256;
  * Clef schedule uses `seed`; positions use `seed ^ NOTE_STREAM_XOR` so the two
  * streams do not share RNG consumption.
  */
-export const NOTE_STREAM_XOR = 0x9e3779b9;
+const NOTE_STREAM_XOR = 0x9e3779b9;
+
+/** Independent clef-schedule and note-position RNGs from one drill seed. */
+function deriveDrillRngs(seed: number): { clefRng: Rng; noteRng: Rng } {
+  const s = seed >>> 0;
+  return {
+    clefRng: seededRng(s),
+    noteRng: seededRng((s ^ NOTE_STREAM_XOR) >>> 0),
+  };
+}
 
 export type DrillNote = {
   position: number;
@@ -538,9 +547,7 @@ export function generateDrill(settings: {
     throw new Error("generateDrill requires at least one clef");
   }
 
-  const seed = settings.seed >>> 0;
-  const clefRng = seededRng(seed);
-  const noteRng = seededRng((seed ^ NOTE_STREAM_XOR) >>> 0);
+  const { clefRng, noteRng } = deriveDrillRngs(settings.seed);
 
   const ledgerLines = clampLedgerLines(settings.ledgerLines ?? DEFAULT_LEDGER_LINES);
   const schedule = buildClefSchedule(settings.clefs, clefRng, SEQUENCE_LENGTH);

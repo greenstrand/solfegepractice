@@ -5,10 +5,6 @@ export type Rng = {
   next(): number;
 };
 
-export function mathRng(): Rng {
-  return { next: () => Math.random() };
-}
-
 /** Deterministic mulberry32 in [0, 1). */
 export function mulberry32(seed: number): Rng {
   let a = seed >>> 0;
