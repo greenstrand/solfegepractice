@@ -25,7 +25,7 @@ You generate a long random sequence of notes, then play it back at a chosen temp
   - **Difficulty (1-10)** - how melodic vs. jumpy the sequence is (step motion vs. larger leaps, range, and related patterns).
   - **Clefs** - treble, bass, alto, and tenor. With **Mix clefs** off, pick one clef. With **Mix clefs** on, select several; the sequence can change clef mid-run.
   - **Ledger lines (0-4)** - how far above and below the staff notes may appear.
-- **View settings** - helpers for what you see on the staff. Changing them updates the URL in place without regenerating the sequence or stopping playback.
+- **View settings** - settings that change how the sequence is displayed. Changing them updates the URL in place without regenerating the sequence or stopping playback.
   - **Progressive reveal** - when on, only notes from the start through the playhead, plus a chosen number of **notes ahead**, are shown; the rest stay hidden.
   - **Show answers** - labels each visible note with its fixed-do syllable (do-si).
 - **Hold F** - while held, shows only the current playhead note's syllable (a quick check without leaving answers on for the whole run). Does not change the URL.
