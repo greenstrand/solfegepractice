@@ -10,7 +10,7 @@ In **fixed do**, those syllables always map to the same pitch letters: do = C, r
 
 Sight-singing and ear-training programs (including approaches associated with Juilliard and other conservatories) often train reading by naming notes with fixed-do syllables while looking at staff notation in several **clefs** (treble, bass, alto, tenor), including notes on **ledger lines** (short lines above or below the five-line staff).
 
-Fixed Dojo drills that skill against paced noteheads on the staff.
+Fixed Dojo drills this skill: a paced sequence of noteheads appears on the staff; you say (or think) the fixed-do syllable for each one in time.
 
 ## What the app does
 
