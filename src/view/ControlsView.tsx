@@ -1,4 +1,4 @@
-/** Settings + transport controls. Props-driven; no session math. */
+/** Settings + playback controls. Props-driven; no session math. */
 
 import { useEffect, useRef, useState } from "react";
 import generateIcon from "../assets/icons/generate.svg";
@@ -129,7 +129,7 @@ export function ControlsView({
   return (
     <section className={className} aria-label="Drill controls">
       <div className="controls-pinned">
-        <div className="controls-transport">
+        <div className="controls-playback">
           <button
             type="button"
             className="btn btn-primary"

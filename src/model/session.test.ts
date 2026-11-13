@@ -19,7 +19,7 @@ function note(position: number, clef: DrillNote["clef"]): DrillNote {
   return { position, clef };
 }
 
-/** Session with crafted notes for visibility/transport tests (bypass generate). */
+/** Session with crafted notes for visibility/playback tests (bypass generate). */
 function sessionWithNotes(
   notes: DrillNote[],
   overrides: {
@@ -98,7 +98,7 @@ describe("play / tick BPM advance", () => {
     expect(s.playhead).toBe(3);
   });
 
-  it("play starts transport without changing settings or notes", () => {
+  it("play starts playback without changing settings or notes", () => {
     const notes = [note(8, "treble"), note(9, "treble"), note(10, "bass")];
     let s = sessionWithNotes(notes, {
       settings: {

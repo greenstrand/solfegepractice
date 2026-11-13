@@ -1,4 +1,4 @@
-/** Session transport and progressive-reveal visibility. Pure reducers; no DOM/rAF. */
+/** Session playback and progressive-reveal visibility. Pure reducers; no DOM/rAF. */
 
 import type { Clef } from "./clefSolfegeMap";
 import { type DrillNote, SEQUENCE_LENGTH, generateDrill } from "./generate";
@@ -105,7 +105,7 @@ export function createSession(overrides?: Partial<DrillSettings>): Session {
   };
 }
 
-/** Replace notes via generateDrill; reset playhead and transport phase. */
+/** Replace notes via generateDrill; reset playhead and beat phase. */
 export function generate(session: Session): Session {
   const ledgerLines = clampLedgerLines(session.settings.ledgerLines);
   const gen: GenerationParams = {
