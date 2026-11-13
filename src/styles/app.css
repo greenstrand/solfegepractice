@@ -92,14 +92,14 @@ body {
   flex-shrink: 0;
 }
 
-.controls-transport {
+.controls-playback {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.55rem;
 }
 
-.controls-transport .btn-icon {
+.controls-playback .btn-icon {
   display: none;
   width: 1.35rem;
   height: 1.35rem;
@@ -108,7 +108,7 @@ body {
   pointer-events: none;
 }
 
-.controls-transport .btn-primary .btn-icon {
+.controls-playback .btn-primary .btn-icon {
   filter: brightness(0) invert(1);
 }
 
@@ -359,13 +359,13 @@ body {
     right: 0.85rem;
   }
 
-  .controls-transport {
+  .controls-playback {
     flex-wrap: wrap;
     align-items: center;
     gap: 0.45rem;
   }
 
-  .controls-transport .btn {
+  .controls-playback .btn {
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -377,11 +377,11 @@ body {
     padding: 0.5rem;
   }
 
-  .controls-transport .btn-icon {
+  .controls-playback .btn-icon {
     display: block;
   }
 
-  .controls-transport .btn-label {
+  .controls-playback .btn-label {
     position: absolute;
     width: 1px;
     height: 1px;

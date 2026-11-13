@@ -129,7 +129,7 @@ export function ControlsView({
   return (
     <section className={className} aria-label="Drill controls">
       <div className="controls-pinned">
-        <div className="controls-transport">
+        <div className="controls-playback">
           <button
             type="button"
             className="btn btn-primary"
