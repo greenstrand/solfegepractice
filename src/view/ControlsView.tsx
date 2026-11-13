@@ -251,6 +251,37 @@ export function ControlsView({
             </div>
           </fieldset>
 
+          <label className="control-field control-ledger">
+            <span className="control-label">Ledger lines</span>
+            <div className="control-slider-row">
+              <input
+                type="range"
+                min={MIN_LEDGER_LINES}
+                max={MAX_LEDGER_LINES}
+                step={1}
+                value={displayLedger}
+                disabled={lockedWhilePlaying}
+                onChange={(e) => writeLedgerDrag(Number(e.target.value))}
+                onPointerUp={releaseLedger}
+                onPointerCancel={releaseLedger}
+                onBlur={releaseLedger}
+                aria-label="Ledger lines slider"
+              />
+              <input
+                type="number"
+                min={MIN_LEDGER_LINES}
+                max={MAX_LEDGER_LINES}
+                value={displayLedger}
+                disabled={lockedWhilePlaying}
+                onChange={(e) => {
+                  writeLedgerDrag(null);
+                  setLedgerLines(Number(e.target.value));
+                }}
+                aria-label="Ledger lines"
+              />
+            </div>
+          </label>
+
           <div className="control-field control-toggles">
             <div className="control-reveal-stack">
               <label className="check-label">
@@ -280,36 +311,6 @@ export function ControlsView({
                 onChange={(e) => setShowAnswers(e.target.checked)}
               />
               Show answers
-            </label>
-            <label className="control-field control-ledger">
-              <span className="control-label">Ledger lines</span>
-              <div className="control-slider-row">
-                <input
-                  type="range"
-                  min={MIN_LEDGER_LINES}
-                  max={MAX_LEDGER_LINES}
-                  step={1}
-                  value={displayLedger}
-                  disabled={lockedWhilePlaying}
-                  onChange={(e) => writeLedgerDrag(Number(e.target.value))}
-                  onPointerUp={releaseLedger}
-                  onPointerCancel={releaseLedger}
-                  onBlur={releaseLedger}
-                  aria-label="Ledger lines slider"
-                />
-                <input
-                  type="number"
-                  min={MIN_LEDGER_LINES}
-                  max={MAX_LEDGER_LINES}
-                  value={displayLedger}
-                  disabled={lockedWhilePlaying}
-                  onChange={(e) => {
-                    writeLedgerDrag(null);
-                    setLedgerLines(Number(e.target.value));
-                  }}
-                  aria-label="Ledger lines"
-                />
-              </div>
             </label>
           </div>
         </div>
