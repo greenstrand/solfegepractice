@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Clef, isDo, letterFor, solfegeFor } from "./clefSolfegeMap";
+import { type Clef, isDo, isSol, letterFor, solfegeFor } from "./clefSolfegeMap";
 import { STAFF_LINES } from "./staffWindow";
 
 /** Expected letter on each staff line (bottom to top) per clef. */
@@ -55,6 +55,30 @@ describe("ClefSolfegeMap", () => {
     expect(letterFor(16, "bass")).toBe("C");
     expect(solfegeFor(16, "bass")).toBe("do");
     expect(isDo(16, "bass")).toBe(true);
+  });
+
+  it("alto pos 14 = sol", () => {
+    expect(letterFor(14, "alto")).toBe("G");
+    expect(solfegeFor(14, "alto")).toBe("sol");
+    expect(isSol(14, "alto")).toBe(true);
+  });
+
+  it("tenor pos 16 = sol", () => {
+    expect(letterFor(16, "tenor")).toBe("G");
+    expect(solfegeFor(16, "tenor")).toBe("sol");
+    expect(isSol(16, "tenor")).toBe(true);
+  });
+
+  it("treble staff line: pos 8 = sol", () => {
+    expect(letterFor(8, "treble")).toBe("G");
+    expect(solfegeFor(8, "treble")).toBe("sol");
+    expect(isSol(8, "treble")).toBe(true);
+  });
+
+  it("bass ledger above: pos 20 = sol", () => {
+    expect(letterFor(20, "bass")).toBe("G");
+    expect(solfegeFor(20, "bass")).toBe("sol");
+    expect(isSol(20, "bass")).toBe(true);
   });
 
   it("B maps to si (not ti)", () => {

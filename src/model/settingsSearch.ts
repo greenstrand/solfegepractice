@@ -116,6 +116,8 @@ function normalizeSettings(settings: DrillSettings): DrillSettings {
     revealN: clampRevealN(settings.revealN),
     showAnswers: settings.showAnswers === true,
     revealEnabled: settings.revealEnabled === true,
+    highlightDo: settings.highlightDo === true,
+    highlightSol: settings.highlightSol === true,
     seed: settings.seed,
   };
 }
@@ -195,7 +197,9 @@ function packSettingsBits(settings: DrillSettings): string {
   bits |= (normalized.revealEnabled ? 1 : 0) << 15;
   bits |= (normalized.showAnswers ? 1 : 0) << 14;
   bits |= (normalized.revealN & 0xff) << 6;
-  // reserved 6 bits stay 0
+  bits |= (normalized.highlightDo ? 1 : 0) << 5;
+  bits |= (normalized.highlightSol ? 1 : 0) << 4;
+  // reserved bits 0-3 stay 0
   return bitsToBase64Url(bits);
 }
 
@@ -224,6 +228,9 @@ function unpackSettingsBits(s: string): Omit<DrillSettings, "bpm" | "seed"> | nu
   const revealEnabled = ((bits >>> 15) & 0x1) === 1;
   const showAnswers = ((bits >>> 14) & 0x1) === 1;
   const revealN = (bits >>> 6) & 0xff;
+  const highlightDo = ((bits >>> 5) & 0x1) === 1;
+  const highlightSol = ((bits >>> 4) & 0x1) === 1;
+  // reserved bits 0-3 ignored on read
 
   const clefs: Clef[] = [];
   for (let i = 0; i < CLEFS.length; i++) {
@@ -241,6 +248,8 @@ function unpackSettingsBits(s: string): Omit<DrillSettings, "bpm" | "seed"> | nu
     revealEnabled,
     showAnswers,
     revealN: clampRevealN(revealN),
+    highlightDo,
+    highlightSol,
   };
 }
 

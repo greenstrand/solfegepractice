@@ -42,7 +42,7 @@ function sessionWithNotes(
 }
 
 describe("createSession", () => {
-  it("defaults to treble-only, mix off, difficulty 3, ledgerLines 3, seed 0, bpm 60, revealN 1, reveal off, no answers", () => {
+  it("defaults to treble-only, mix off, difficulty 3, ledgerLines 3, seed 0, bpm 60, revealN 1, reveal off, no answers, highlights off", () => {
     const s = createSession();
     expect(s.settings.clefs).toEqual(["treble"]);
     expect(s.settings.mixClefs).toBe(false);
@@ -53,6 +53,8 @@ describe("createSession", () => {
     expect(s.settings.revealEnabled).toBe(false);
     expect(s.settings.revealN).toBe(1);
     expect(s.settings.showAnswers).toBe(false);
+    expect(s.settings.highlightDo).toBe(false);
+    expect(s.settings.highlightSol).toBe(false);
     expect(s.playhead).toBe(0);
     expect(s.playing).toBe(false);
     expect(s.notes).toEqual([]);
@@ -166,7 +168,13 @@ describe("setViewPrefs live apply", () => {
         showAnswers: false,
       },
     });
-    s = setViewPrefs(s, { revealEnabled: true, revealN: 3, showAnswers: true });
+    s = setViewPrefs(s, {
+      revealEnabled: true,
+      revealN: 3,
+      showAnswers: true,
+      highlightDo: false,
+      highlightSol: false,
+    });
     expect(s.settings.revealEnabled).toBe(true);
     expect(s.settings.revealN).toBe(3);
     expect(s.settings.showAnswers).toBe(true);
@@ -177,11 +185,62 @@ describe("setViewPrefs live apply", () => {
     expect(s.lastTickMs).toBe(500);
   });
 
+  it("updates when highlight flags change", () => {
+    const notes = [note(8, "treble"), note(9, "treble")];
+    let s = sessionWithNotes(notes, {
+      playhead: 1,
+      playing: true,
+      settings: {
+        revealEnabled: false,
+        revealN: 1,
+        showAnswers: false,
+        highlightDo: false,
+        highlightSol: false,
+      },
+    });
+    s = setViewPrefs(s, {
+      revealEnabled: false,
+      revealN: 1,
+      showAnswers: false,
+      highlightDo: true,
+      highlightSol: false,
+    });
+    expect(s.settings.highlightDo).toBe(true);
+    expect(s.settings.highlightSol).toBe(false);
+    expect(s.playing).toBe(true);
+    expect(s.playhead).toBe(1);
+    expect(s.notes).toEqual(notes);
+
+    s = setViewPrefs(s, {
+      revealEnabled: false,
+      revealN: 1,
+      showAnswers: false,
+      highlightDo: true,
+      highlightSol: true,
+    });
+    expect(s.settings.highlightDo).toBe(true);
+    expect(s.settings.highlightSol).toBe(true);
+  });
+
   it("returns same session when view prefs unchanged after clamp", () => {
     const s = sessionWithNotes([note(10, "treble")], {
-      settings: { revealEnabled: true, revealN: 2, showAnswers: true },
+      settings: {
+        revealEnabled: true,
+        revealN: 2,
+        showAnswers: true,
+        highlightDo: true,
+        highlightSol: false,
+      },
     });
-    expect(setViewPrefs(s, { revealEnabled: true, revealN: 2, showAnswers: true })).toBe(s);
+    expect(
+      setViewPrefs(s, {
+        revealEnabled: true,
+        revealN: 2,
+        showAnswers: true,
+        highlightDo: true,
+        highlightSol: false,
+      }),
+    ).toBe(s);
   });
 });
 

@@ -41,3 +41,7 @@ export function solfegeFor(position: number, clef: Clef): Solfege {
 export function isDo(position: number, clef: Clef): boolean {
   return pitchClassFor(position, clef) === 0;
 }
+
+export function isSol(position: number, clef: Clef): boolean {
+  return pitchClassFor(position, clef) === 4;
+}
