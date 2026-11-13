@@ -77,23 +77,15 @@ function ensureCanonicalSearch(): CanonicalSearch {
 }
 
 export function useSettingsSearch(): SettingsSearchApi {
-  const [search, setSearch] = useState(() => ensureCanonicalSearch().search);
-  const [loadError, setLoadError] = useState(() => ensureCanonicalSearch().loadError);
+  const [initial] = useState(ensureCanonicalSearch);
+  const [search, setSearch] = useState(initial.search);
+  const [loadError, setLoadError] = useState(initial.loadError);
   /** Last written search; dedupes rapid duplicate commits before React state catches up. */
   const lastWrittenSearchRef = useRef(search);
 
   useEffect(() => {
-    const recovered = recoverFromSearch(window.location.search);
-    if (recovered.shouldReplace) {
-      window.history.replaceState(null, "", historyUrl(recovered.search));
-      lastWrittenSearchRef.current = recovered.search;
-      setSearch(recovered.search);
-    }
-    setLoadError(recovered.loadError);
-  }, []);
-
-  useEffect(() => {
     const onPopState = () => {
+      lastEnsure = null;
       const recovered = recoverFromSearch(window.location.search);
       if (recovered.shouldReplace) {
         window.history.replaceState(null, "", historyUrl(recovered.search));
@@ -112,6 +104,7 @@ export function useSettingsSearch(): SettingsSearchApi {
     const prev = lastWrittenSearchRef.current;
     const next = serializeSearch(nextSettings);
     if (next === prev) {
+      lastEnsure = null;
       setLoadError(false);
       return;
     }
@@ -122,6 +115,7 @@ export function useSettingsSearch(): SettingsSearchApi {
     } else {
       window.history.pushState(null, "", historyUrl(next));
     }
+    lastEnsure = null;
     lastWrittenSearchRef.current = next;
     setSearch(next);
     setLoadError(false);
