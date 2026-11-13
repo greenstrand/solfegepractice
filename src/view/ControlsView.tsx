@@ -24,6 +24,8 @@ export type ControlsViewProps = {
   setRevealEnabled: (enabled: boolean) => void;
   setRevealN: (n: number) => void;
   setShowAnswers: (show: boolean) => void;
+  setHighlightDo: (on: boolean) => void;
+  setHighlightSol: (on: boolean) => void;
   setMixClefs: (mix: boolean) => void;
   toggleClef: (clef: Clef) => void;
   className?: string;
@@ -50,6 +52,8 @@ export function ControlsView({
   setRevealEnabled,
   setRevealN,
   setShowAnswers,
+  setHighlightDo,
+  setHighlightSol,
   setMixClefs,
   toggleClef,
   className = "controls-view",
@@ -303,6 +307,27 @@ export function ControlsView({
                   aria-label="Notes ahead"
                 />
               </label>
+            </div>
+            <div className="control-reveal-stack">
+              <span className="control-label">Highlights</span>
+              <div className="clef-checks">
+                <label className="check-label">
+                  <input
+                    type="checkbox"
+                    checked={settings.highlightDo}
+                    onChange={(e) => setHighlightDo(e.target.checked)}
+                  />
+                  do
+                </label>
+                <label className="check-label">
+                  <input
+                    type="checkbox"
+                    checked={settings.highlightSol}
+                    onChange={(e) => setHighlightSol(e.target.checked)}
+                  />
+                  sol
+                </label>
+              </div>
             </div>
             <label className="check-label">
               <input

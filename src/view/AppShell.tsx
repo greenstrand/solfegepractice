@@ -87,6 +87,8 @@ export function AppShell({ drill }: AppShellProps) {
         setRevealEnabled={drill.setRevealEnabled}
         setRevealN={drill.setRevealN}
         setShowAnswers={drill.setShowAnswers}
+        setHighlightDo={drill.setHighlightDo}
+        setHighlightSol={drill.setHighlightSol}
         setMixClefs={drill.setMixClefs}
         toggleClef={drill.toggleClef}
       />
