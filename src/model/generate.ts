@@ -14,19 +14,12 @@ export type { Rng };
 
 export const SEQUENCE_LENGTH = 256;
 
-/**
- * XOR used to derive the note-position stream seed from the drill seed.
- * Clef schedule uses `seed`; positions use `seed ^ NOTE_STREAM_XOR` so the two
- * streams do not share RNG consumption.
- */
-const NOTE_STREAM_XOR = 0x9e3779b9;
-
-/** Independent clef-schedule and note-position RNGs from one drill seed. */
+/** Independent streams from seed and seed+1. */
 function deriveDrillRngs(seed: number): { clefRng: Rng; noteRng: Rng } {
   const s = seed >>> 0;
   return {
     clefRng: seededRng(s),
-    noteRng: seededRng((s ^ NOTE_STREAM_XOR) >>> 0),
+    noteRng: seededRng((s + 1) >>> 0),
   };
 }
 
