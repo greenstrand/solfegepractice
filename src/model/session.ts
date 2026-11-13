@@ -105,7 +105,7 @@ export function createSession(overrides?: Partial<DrillSettings>): Session {
   };
 }
 
-/** Replace notes via generateDrill; reset playhead and playback phase. */
+/** Replace notes via generateDrill; reset playhead and beat phase. */
 export function generate(session: Session): Session {
   const ledgerLines = clampLedgerLines(session.settings.ledgerLines);
   const gen: GenerationParams = {
